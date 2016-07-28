@@ -16,6 +16,7 @@
 package org.gradle.nativeplatform.internal;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
@@ -44,6 +45,7 @@ import org.gradle.platform.base.internal.dependents.DependentBinariesResolver;
 
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 public class NativeComponents {
@@ -98,12 +100,31 @@ public class NativeComponents {
     }
 
     public static void createBuildDependentComponentsTasks(ModelMap<Task> tasks, ComponentSpecContainer components) {
+        tasks.create(ASSEMBLE_DEPENDENTS_TASK_NAME, DefaultTask.class, new Action<DefaultTask>() {
+            @Override
+            public void execute(DefaultTask assembleDependents) {
+                assembleDependents.setGroup("Build Dependents");
+                assembleDependents.setDescription("Assemble dependents of all components of this project.");
+                assembleDependents.dependsOn("assemble");
+            }
+        });
+        tasks.create(BUILD_DEPENDENTS_TASK_NAME, DefaultTask.class, new Action<DefaultTask>() {
+            @Override
+            public void execute(DefaultTask buildDependents) {
+                buildDependents.setGroup("Build Dependents");
+                buildDependents.setDescription("Build dependents of all components of this project.");
+                buildDependents.dependsOn("build");
+            }
+        });
+        final Set<Task> assembleDependentComponents = Sets.newHashSet();
+        final Set<Task> buildDependentComponents = Sets.newHashSet();
         for (final VariantComponentSpec component : components.withType(NativeComponentSpec.class).withType(VariantComponentSpec.class)) {
             tasks.create(getAssembleDependentComponentsTaskName(component), DefaultTask.class, new Action<DefaultTask>() {
                 @Override
                 public void execute(DefaultTask assembleDependents) {
                     assembleDependents.setGroup("Build Dependents");
                     assembleDependents.setDescription("Assemble dependents of " + component.getDisplayName() + ".");
+                    assembleDependentComponents.add(assembleDependents);
                 }
             });
             tasks.create(getBuildDependentComponentsTaskName(component), DefaultTask.class, new Action<DefaultTask>() {
@@ -111,9 +132,12 @@ public class NativeComponents {
                 public void execute(DefaultTask buildDependents) {
                     buildDependents.setGroup("Build Dependents");
                     buildDependents.setDescription("Build dependents of " + component.getDisplayName() + ".");
+                    buildDependentComponents.add(buildDependents);
                 }
             });
         }
+        tasks.get(ASSEMBLE_DEPENDENTS_TASK_NAME).dependsOn(assembleDependentComponents);
+        tasks.get(BUILD_DEPENDENTS_TASK_NAME).dependsOn(buildDependentComponents);
     }
 
     public static void createBuildDependentBinariesTasks(final NativeBinarySpecInternal binary, BinaryNamingScheme namingScheme) {
