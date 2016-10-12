@@ -377,6 +377,147 @@ task javadocAll(type: Javadoc) {
     ext.entryPoint = "$destinationDir/index.html"
 }
 
+configurations {
+    japicmp {
+        transitive = false
+    }
+}
+
+dependencies {
+    japicmp 'com.github.siom79.japicmp:japicmp:0.9.1:jar-with-dependencies'
+}
+
+import org.gradle.tooling.GradleConnector
+import org.gradle.internal.logging.ConsoleRenderer
+
+class GenerateJapiccReport extends DefaultTask {
+    @Input
+    String previousVersion
+
+    @Input
+    String currentVersion
+    
+    @InputFiles
+    Closure currentDistribution
+
+    @Input
+    List<String> extraArgs = []
+
+    @Internal
+    File getBinDist() {
+        assert currentDistribution != null
+        return currentDistribution().archivePath
+    }
+    
+    @OutputDirectory
+    File reportDir = new File(project.buildDir, "reports/japicc")
+
+    @TaskAction
+    public void generateReport() {
+        project.delete(temporaryDir)
+        def projectDir = generateProject()
+        def previousGradleApi = repackageForAnalysis(generateApiJarFor(previousVersion, usePreviousVersion(), projectDir))
+        def currentGradleApi = repackageForAnalysis(generateApiJarFor(currentVersion, useCurrentVersion(), projectDir))
+
+        project.exec {
+            workingDir = reportDir
+            executable = "japi-compliance-checker"
+            ignoreExitValue = true
+            args extraArgs
+            args previousGradleApi.absolutePath, currentGradleApi.absolutePath
+        }
+
+        def reportFile = new File(reportDir, "compat_reports/r-gradle-api/${previousVersion}_to_${currentVersion}/compat_report.html")
+        logger.lifecycle("See report at: " + new ConsoleRenderer().asClickableFileUrl(reportFile))
+
+        project.exec {
+            workingDir = reportDir
+            executable = "java"
+            args "-jar", project.configurations.japicmp.singleFile
+            args "-o", previousGradleApi.absolutePath
+            args "-n", currentGradleApi.absolutePath
+            args "--html-file", new File(reportDir, "public_api_differences.html").absolutePath
+            args "-m", "--ignore-missing-classes", "--report-only-filename"
+            args "--exclude", "*.internal.*;org.gradle.initialization.*;org.gradle.util.*"
+        }
+
+        reportFile = new File(reportDir, "public_api_differences.html")
+        logger.lifecycle("See report at: " + new ConsoleRenderer().asClickableFileUrl(reportFile))
+    }
+
+    GradleConnector usePreviousVersion() {
+        GradleConnector.newConnector().useGradleVersion(previousVersion) 
+    }
+    
+    GradleConnector useCurrentVersion() {
+        GradleConnector.newConnector().useDistribution(binDist.toURI())
+    }
+
+    File generateProject() {
+        def projectDir = new File(temporaryDir, "project")
+        projectDir.mkdirs()
+        def buildFile = new File(projectDir, "build.gradle")
+        buildFile << """
+        configurations {
+            generate
+        }
+        dependencies {
+            generate gradleApi()
+        }
+        task generateGradleApi {
+            dependsOn configurations.generate
+        }
+        """
+        return projectDir        
+    }
+
+    File generateApiJarFor(String version, GradleConnector connector, File projectDir) {
+        def gradleUserHome = new File(temporaryDir, ".gradle")
+
+        connector.useGradleUserHomeDir(gradleUserHome)
+        connector.forProjectDirectory(projectDir)
+        connector.searchUpwards(false)
+        connector.embedded(true)
+
+        def connection = connector.connect()
+        try {
+            def launcher = connection.newBuild()
+            launcher.forTasks("generateGradleApi")
+            launcher.setStandardOutput(System.out)
+            launcher.setStandardError(System.err)
+            launcher.run()
+        } finally {
+            connection.close()
+        }
+
+        return new File(gradleUserHome, "caches/${version}/generated-gradle-jars/gradle-api-${version}.jar")
+    }
+
+    File repackageForAnalysis(File original) {
+        // Duplicate files of different types (file vs directory) breaks the analyzer
+        def repackage = new File(original.parentFile, "r-" + original.name)
+        ant.zip(destfile: repackage.absolutePath) {
+            zipfileset(src: original.absolutePath) {
+                exclude(name: "LICENSE")
+            }
+        }
+        return repackage
+    }
+}
+
+task generateJapiccReport(type: GenerateJapiccReport) {
+    currentVersion = version
+    previousVersion = "3.1" // TODO: derive from current version
+    extraArgs = [
+        "-show-access",
+        "-show-packages",
+        "-sort"
+    ]
+    currentDistribution = { 
+        project(":distributions").tasks["binZip"]
+    }
+}
+
 task checkstyleApi(type: Checkstyle) {
     source javadocAll.source
     configFile = file("$checkstyleConfigDir/checkstyle-api.xml")
