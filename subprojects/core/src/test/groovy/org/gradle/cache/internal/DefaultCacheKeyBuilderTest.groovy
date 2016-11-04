@@ -22,8 +22,7 @@ import com.google.common.hash.HashFunction
 import com.google.common.hash.Hasher
 import org.gradle.api.internal.hash.FileHasher
 import org.gradle.internal.classloader.ClassLoaderHierarchyHasher
-import org.gradle.internal.classloader.ClassPathSnapshot
-import org.gradle.internal.classloader.ClassPathSnapshotter
+import org.gradle.internal.classloader.ClasspathHasher
 import org.gradle.internal.classpath.DefaultClassPath
 import spock.lang.Specification
 
@@ -33,7 +32,7 @@ class DefaultCacheKeyBuilderTest extends Specification {
 
     def hashFunction = Mock(HashFunction)
     def fileHasher = Mock(FileHasher)
-    def snapshotter = Mock(ClassPathSnapshotter)
+    def snapshotter = Mock(ClasspathHasher)
     def classLoaderHierarchyHasher = Mock(ClassLoaderHierarchyHasher)
     def subject = new DefaultCacheKeyBuilder(hashFunction, fileHasher, snapshotter, classLoaderHierarchyHasher)
 
@@ -90,14 +89,12 @@ class DefaultCacheKeyBuilderTest extends Specification {
         def prefix = 'p'
         def classPath = DefaultClassPath.of([new File('f')])
         def classPathHash = 42G
-        def classPathSnapshot = Mock(ClassPathSnapshot)
 
         when:
         def key = subject.build(CacheKeySpec.withPrefix(prefix) + classPath)
 
         then:
-        1 * snapshotter.snapshot(classPath) >> classPathSnapshot
-        1 * classPathSnapshot.getStrongHash() >> hashCodeFrom(classPathHash)
+        1 * snapshotter.hash(classPath) >> hashCodeFrom(classPathHash)
         0 * _
 
         and:

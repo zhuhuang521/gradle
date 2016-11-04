@@ -14,13 +14,24 @@
  * limitations under the License.
  */
 
-package org.gradle.internal.classloader;
+package org.gradle.api.internal.initialization.loadercache;
 
+import com.google.common.base.Charsets;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
+import org.gradle.internal.classloader.ClasspathHasher;
 import org.gradle.internal.classpath.ClassPath;
 
 /**
- * Creates snapshots of classpaths.
+ * Creates snapshot based on file paths.
  */
-public interface ClassPathSnapshotter {
-    ClassPathSnapshot snapshot(ClassPath classPath);
+public class FileClasspathHasher implements ClasspathHasher {
+    @Override
+    public HashCode hash(ClassPath classpath) {
+        def hasher = Hashing.md5().newHasher()
+        classpath.asFiles*.path.each { String path ->
+            hasher.putString(path, Charsets.UTF_8)
+        }
+        return hasher.hash();
+    }
 }

@@ -28,7 +28,7 @@ import spock.lang.Specification
 
 class DefaultClassLoaderCacheTest extends Specification {
 
-    def snapshotter = new FileClassPathSnapshotter()
+    def snapshotter = new FileClasspathHasher()
     def cache = new DefaultClassLoaderCache(new DefaultHashingClassLoaderFactory(snapshotter), snapshotter)
     def id1 = new ClassLoaderId() {}
     def id2 = new ClassLoaderId() {}
