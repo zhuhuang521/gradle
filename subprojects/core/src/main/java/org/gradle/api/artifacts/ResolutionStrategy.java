@@ -18,6 +18,7 @@ package org.gradle.api.artifacts;
 
 import org.gradle.api.Action;
 import org.gradle.api.Incubating;
+import org.gradle.api.artifacts.transform.ArtifactFilter;
 import org.gradle.api.artifacts.transform.ArtifactTransform;
 
 import java.util.Set;
@@ -298,4 +299,6 @@ public interface ResolutionStrategy {
      */
     @Incubating
     void registerTransform(Class<? extends ArtifactTransform> type, Action<? super ArtifactTransform> config);
+
+    void registerFilter(Class<? extends ArtifactFilter> type);
 }

@@ -14,16 +14,26 @@
  * limitations under the License.
  */
 
-package org.gradle.api.internal.artifacts.transform;
+package org.gradle.api.artifacts.transform;
 
-import org.gradle.api.Transformer;
-import org.gradle.api.artifacts.transform.ArtifactFilter;
+import org.gradle.api.Incubating;
+import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.attributes.AttributeContainer;
 
-import java.io.File;
-import java.util.List;
+/**
+ * Allows the artifacts to be filtered based on
+ */
+@Incubating
+public abstract class ArtifactFilter {
+    public static ArtifactFilter INCLUDE_ALL = new ArtifactFilter() {
+        @Override
+        public void configure(AttributeContainer from) {
+        }
+    };
 
-interface ArtifactTransforms {
-    Transformer<List<File>, File> getTransform(AttributeContainer from, AttributeContainer to);
-    ArtifactFilter getFilter(AttributeContainer to);
+    public abstract void configure(AttributeContainer from);
+
+    public boolean include(ComponentIdentifier component) {
+        return true;
+    }
 }

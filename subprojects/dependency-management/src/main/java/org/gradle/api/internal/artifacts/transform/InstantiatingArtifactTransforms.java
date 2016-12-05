@@ -17,6 +17,7 @@
 package org.gradle.api.internal.artifacts.transform;
 
 import org.gradle.api.Transformer;
+import org.gradle.api.artifacts.transform.ArtifactFilter;
 import org.gradle.api.artifacts.transform.ArtifactTransform;
 import org.gradle.api.artifacts.transform.ArtifactTransformException;
 import org.gradle.api.attributes.AttributeContainer;
@@ -34,6 +35,20 @@ class InstantiatingArtifactTransforms implements ArtifactTransforms {
     public InstantiatingArtifactTransforms(ResolutionStrategyInternal resolutionStrategy, ArtifactAttributeMatcher attributeMatcher) {
         this.resolutionStrategy = resolutionStrategy;
         this.attributeMatcher = attributeMatcher;
+    }
+
+    @Override
+    public ArtifactFilter getFilter(AttributeContainer from) {
+        for (ArtifactTransformRegistrations.ArtifactFilterRegistration filterReg : resolutionStrategy.getFilters()) {
+            if (attributeMatcher.attributesMatch(from, filterReg.from, filterReg.from)) {
+                return createArtifactFilter(filterReg);
+            }
+        }
+        return ArtifactFilter.INCLUDE_ALL;
+    }
+
+    private ArtifactFilter createArtifactFilter(ArtifactTransformRegistrations.ArtifactFilterRegistration registration) {
+        return DirectInstantiator.INSTANCE.newInstance(registration.type);
     }
 
     @Override

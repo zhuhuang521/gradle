@@ -20,6 +20,7 @@ import org.gradle.api.Buildable
 import org.gradle.api.Transformer
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.component.ComponentIdentifier
+import org.gradle.api.artifacts.transform.ArtifactFilter
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.internal.artifacts.attributes.DefaultArtifactAttributes
 import org.gradle.api.internal.artifacts.configurations.ResolutionStrategyInternal
@@ -28,9 +29,7 @@ import org.gradle.api.internal.attributes.DefaultAttributeContainer
 import org.gradle.api.internal.attributes.DefaultAttributesSchema
 import spock.lang.Specification
 
-import static org.gradle.api.internal.artifacts.ArtifactAttributes.ARTIFACT_CLASSIFIER
-import static org.gradle.api.internal.artifacts.ArtifactAttributes.ARTIFACT_EXTENSION
-import static org.gradle.api.internal.artifacts.ArtifactAttributes.ARTIFACT_FORMAT
+import static org.gradle.api.internal.artifacts.ArtifactAttributes.*
 
 class ArtifactTransformerTest extends Specification {
     def resolutionStrategy = Mock(ResolutionStrategyInternal)
@@ -65,6 +64,7 @@ class ArtifactTransformerTest extends Specification {
 
         then:
         1 * visitor.visitArtifact(artifact)
+        1 * artifactTransforms.getFilter(_) >> ArtifactFilter.INCLUDE_ALL
         1 * artifactTransforms.getTransform(requestAttributes, requestAttributes) >> null
         0 * _
     }
@@ -85,6 +85,7 @@ class ArtifactTransformerTest extends Specification {
         transformVisitor.visitArtifact(artifact)
 
         then:
+        1 * artifactTransforms.getFilter(_) >> ArtifactFilter.INCLUDE_ALL
         1 * artifactTransforms.getTransform(typeAttributes("zip"), typeAttributes("classpath")) >> transform
         1 * transform.transform(file) >> [transformedFile]
         1 * visitor.visitArtifact(_) >> { ResolvedArtifact a -> transformedArtifact = a }
@@ -108,6 +109,7 @@ class ArtifactTransformerTest extends Specification {
         transformVisitor.visitArtifact(artifact)
 
         then:
+        1 * artifactTransforms.getFilter(_) >> ArtifactFilter.INCLUDE_ALL
         0 * visitor._
     }
 

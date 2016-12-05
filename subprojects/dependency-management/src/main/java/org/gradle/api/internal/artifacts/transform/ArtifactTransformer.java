@@ -24,6 +24,7 @@ import org.gradle.api.Transformer;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.component.ComponentArtifactIdentifier;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
+import org.gradle.api.artifacts.transform.ArtifactFilter;
 import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.attributes.AttributesSchema;
 import org.gradle.api.attributes.HasAttributes;
@@ -65,6 +66,10 @@ public class ArtifactTransformer {
         return attributeMatcher.attributesMatch(artifact, configuration, artifact.getAttributes());
     }
 
+    private ArtifactFilter getFilter(AttributeContainer to) {
+        return artifactTransforms.getFilter(to);
+    }
+
     private Transformer<List<File>, File> getTransform(HasAttributes from, AttributeContainer to) {
         return artifactTransforms.getTransform(from.getAttributes(), to);
     }
@@ -96,6 +101,11 @@ public class ArtifactTransformer {
         return new ArtifactVisitor() {
             @Override
             public void visitArtifact(final ResolvedArtifact artifact) {
+                ArtifactFilter filter = getFilter(immutableAttributes);
+                if (!filter.include(artifact.getId().getComponentIdentifier())) {
+                    return;
+                }
+
                 List<ResolvedArtifact> transformResults = transformedArtifacts.get(Pair.of(artifact, immutableAttributes));
                 if (transformResults != null) {
                     for (ResolvedArtifact resolvedArtifact : transformResults) {

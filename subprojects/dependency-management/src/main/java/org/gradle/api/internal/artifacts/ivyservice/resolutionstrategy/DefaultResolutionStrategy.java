@@ -25,8 +25,8 @@ import org.gradle.api.artifacts.DependencySubstitutions;
 import org.gradle.api.artifacts.ModuleVersionSelector;
 import org.gradle.api.artifacts.ResolutionStrategy;
 import org.gradle.api.artifacts.cache.ResolutionRules;
+import org.gradle.api.artifacts.transform.ArtifactFilter;
 import org.gradle.api.artifacts.transform.ArtifactTransform;
-import org.gradle.api.internal.artifacts.transform.ArtifactTransformRegistrations;
 import org.gradle.api.internal.artifacts.ComponentSelectionRulesInternal;
 import org.gradle.api.internal.artifacts.component.ComponentIdentifierFactory;
 import org.gradle.api.internal.artifacts.configurations.ConflictResolution;
@@ -36,6 +36,7 @@ import org.gradle.api.internal.artifacts.dsl.ModuleVersionSelectorParsers;
 import org.gradle.api.internal.artifacts.ivyservice.dependencysubstitution.DefaultDependencySubstitutions;
 import org.gradle.api.internal.artifacts.ivyservice.dependencysubstitution.DependencySubstitutionRules;
 import org.gradle.api.internal.artifacts.ivyservice.dependencysubstitution.DependencySubstitutionsInternal;
+import org.gradle.api.internal.artifacts.transform.ArtifactTransformRegistrations;
 import org.gradle.internal.Actions;
 import org.gradle.internal.rules.SpecRuleAction;
 import org.gradle.internal.typeconversion.NormalizedTimeUnit;
@@ -93,6 +94,16 @@ public class DefaultResolutionStrategy implements ResolutionStrategyInternal {
     @Override
     public void registerTransform(Class<? extends ArtifactTransform> type, Action<? super ArtifactTransform> config) {
         transforms.registerTransform(type, config);
+    }
+
+    @Override
+    public Iterable<ArtifactTransformRegistrations.ArtifactFilterRegistration> getFilters() {
+        return transforms.getFilters();
+    }
+
+    @Override
+    public void registerFilter(Class<? extends ArtifactFilter> type) {
+        transforms.registerFilter(type);
     }
 
     public Set<ModuleVersionSelector> getForcedModules() {

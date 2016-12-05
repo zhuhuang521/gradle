@@ -18,8 +18,9 @@ package org.gradle.api.internal.artifacts.transform;
 
 import com.google.common.collect.Lists;
 import org.gradle.api.Action;
-import org.gradle.api.attributes.AttributeContainer;
+import org.gradle.api.artifacts.transform.ArtifactFilter;
 import org.gradle.api.artifacts.transform.ArtifactTransform;
+import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.internal.attributes.AttributeContainerInternal;
 import org.gradle.api.internal.attributes.DefaultAttributeContainer;
 import org.gradle.internal.reflect.DirectInstantiator;
@@ -28,6 +29,7 @@ import java.util.List;
 
 public class ArtifactTransformRegistrations {
     private final List<ArtifactTransformRegistration> transforms = Lists.newArrayList();
+    private final List<ArtifactFilterRegistration> filters = Lists.newArrayList();
 
     public void registerTransform(Class<? extends ArtifactTransform> type, Action<? super ArtifactTransform> config) {
         ArtifactTransform artifactTransform = DirectInstantiator.INSTANCE.newInstance(type);
@@ -46,6 +48,18 @@ public class ArtifactTransformRegistrations {
         return transforms;
     }
 
+    public void registerFilter(Class<? extends ArtifactFilter> type) {
+        ArtifactFilter artifactFilter = DirectInstantiator.INSTANCE.newInstance(type);
+        AttributeContainerInternal from = new DefaultAttributeContainer();
+        artifactFilter.configure(from);
+
+        filters.add(new ArtifactFilterRegistration(from.asImmutable(), type));
+    }
+
+    public Iterable<ArtifactFilterRegistration> getFilters() {
+        return filters;
+    }
+
     public final class ArtifactTransformRegistration {
         public final AttributeContainer from;
         public final AttributeContainer to;
@@ -57,6 +71,16 @@ public class ArtifactTransformRegistrations {
             this.to = to;
             this.type = type;
             this.config = config;
+        }
+    }
+
+    public final class ArtifactFilterRegistration {
+        public final AttributeContainer from;
+        public final Class<? extends ArtifactFilter> type;
+
+        ArtifactFilterRegistration(AttributeContainer from, Class<? extends ArtifactFilter> type) {
+            this.from = from;
+            this.type = type;
         }
     }
 }

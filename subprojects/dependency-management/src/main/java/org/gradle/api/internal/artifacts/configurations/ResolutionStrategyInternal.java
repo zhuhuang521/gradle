@@ -19,10 +19,10 @@ import org.gradle.api.Action;
 import org.gradle.api.artifacts.DependencySubstitution;
 import org.gradle.api.artifacts.ResolutionStrategy;
 import org.gradle.api.artifacts.cache.ResolutionRules;
-import org.gradle.api.internal.artifacts.transform.ArtifactTransformRegistrations;
 import org.gradle.api.internal.artifacts.ComponentSelectionRulesInternal;
 import org.gradle.api.internal.artifacts.configurations.dynamicversion.CachePolicy;
 import org.gradle.api.internal.artifacts.ivyservice.dependencysubstitution.DependencySubstitutionsInternal;
+import org.gradle.api.internal.artifacts.transform.ArtifactTransformRegistrations;
 
 public interface ResolutionStrategyInternal extends ResolutionStrategy {
 
@@ -83,4 +83,6 @@ public interface ResolutionStrategyInternal extends ResolutionStrategy {
      * @return transforms registered with this resolution strategy
      */
     Iterable<ArtifactTransformRegistrations.ArtifactTransformRegistration> getTransforms();
+
+    Iterable<ArtifactTransformRegistrations.ArtifactFilterRegistration> getFilters();
 }
