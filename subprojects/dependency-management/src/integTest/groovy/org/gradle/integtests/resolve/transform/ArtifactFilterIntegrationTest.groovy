@@ -16,7 +16,6 @@
 
 package org.gradle.integtests.resolve.transform
 
-import groovy.transform.NotYetImplemented
 import org.gradle.integtests.fixtures.AbstractHttpDependencyResolutionTest
 
 class ArtifactFilterIntegrationTest extends AbstractHttpDependencyResolutionTest {
@@ -92,7 +91,6 @@ class ArtifactFilterIntegrationTest extends AbstractHttpDependencyResolutionTest
         succeeds "check"
     }
 
-    @NotYetImplemented
     def "does not build project components excluded from view"() {
         given:
         buildFile << """

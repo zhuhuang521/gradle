@@ -81,10 +81,12 @@ public class ArtifactTransformer {
         if (attributes == null || attributes.isEmpty()) {
             return Specs.satisfyAll();
         }
+        final ArtifactFilter filter = getFilter(attributes);
         return new Spec<ResolvedArtifact>() {
             @Override
             public boolean isSatisfiedBy(ResolvedArtifact artifact) {
-                return getTransform(artifact, attributes) != null || matchArtifactsAttributes(artifact, attributes);
+                return filter.include(artifact.getId().getComponentIdentifier())
+                    && (getTransform(artifact, attributes) != null || matchArtifactsAttributes(artifact, attributes));
             }
         };
     }
