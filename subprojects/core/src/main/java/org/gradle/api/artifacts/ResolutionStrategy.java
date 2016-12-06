@@ -300,5 +300,14 @@ public interface ResolutionStrategy {
     @Incubating
     void registerTransform(Class<? extends ArtifactTransform> type, Action<? super ArtifactTransform> config);
 
+    /**
+     * Register an artifact filter.
+     *
+     * @param type implementation type of the artifact filter
+     *
+     * @see ArtifactFilter
+     * @since 3.3
+     */
+    @Incubating
     void registerFilter(Class<? extends ArtifactFilter> type);
 }

@@ -21,19 +21,29 @@ import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.attributes.AttributeContainer;
 
 /**
- * Allows the artifacts to be filtered based on
+ * Allows the artifacts to be filtered from a Configuration / View based on the source component identifier.
+ * Artifact filters will apply to any view that matches the configured filter attributes.
  */
 @Incubating
 public abstract class ArtifactFilter {
     public static ArtifactFilter INCLUDE_ALL = new ArtifactFilter() {
         @Override
-        public void configure(AttributeContainer from) {
+        public void configure(AttributeContainer filterOnAttributes) {
+        }
+
+        @Override
+        public boolean include(ComponentIdentifier component) {
+            return true;
         }
     };
 
-    public abstract void configure(AttributeContainer from);
+    /**
+     * Specifies the attributes that must be matched in order for this filter to apply.
+     */
+    public abstract void configure(AttributeContainer filterOnAttributes);
 
-    public boolean include(ComponentIdentifier component) {
-        return true;
-    }
+    /**
+     * Specifies whether artifacts from the component should be included in the view.
+     */
+    public abstract boolean include(ComponentIdentifier component);
 }
