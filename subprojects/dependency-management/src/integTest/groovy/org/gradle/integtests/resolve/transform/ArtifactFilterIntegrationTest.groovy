@@ -44,6 +44,13 @@ class ArtifactFilterIntegrationTest extends AbstractHttpDependencyResolutionTest
 
             configurations {
                 compile
+                filteredCompile {
+                    extendsFrom compile
+                    attributes view: 'filtered'
+                }
+            }
+            configurations.all {
+                resolutionStrategy.registerFilter(ViewFilter)
             }
 """
     }
@@ -59,9 +66,6 @@ class ArtifactFilterIntegrationTest extends AbstractHttpDependencyResolutionTest
                 compile 'org.exclude:excluded:2.3'
                 compile project('libInclude')
                 compile project('libExclude')
-            }
-            configurations.all {
-                resolutionStrategy.registerFilter(ViewFilter)
             }
             class ViewFilter extends org.gradle.api.artifacts.transform.ArtifactFilter {
                 void configure(AttributeContainer from) {
@@ -81,8 +85,9 @@ class ArtifactFilterIntegrationTest extends AbstractHttpDependencyResolutionTest
                     def all = ['included-1.3.jar', 'excluded-2.3.jar', 'libInclude.jar', 'libExclude.jar']
                     def filtered = ['included-1.3.jar', 'libInclude.jar']
                     assert configurations.compile.collect { it.name } == all
-                    assert configurations.compile.incoming.getFiles(view: 'filtered').collect { it.name } == filtered
+                    assert configurations.filteredCompile.collect { it.name } == filtered
                     assert configurations.compile.incoming.getFiles(view: 'unfiltered').collect { it.name } == all
+                    assert configurations.compile.incoming.getFiles(view: 'filtered').collect { it.name } == filtered
                 }
             }
 """
@@ -98,7 +103,9 @@ class ArtifactFilterIntegrationTest extends AbstractHttpDependencyResolutionTest
                 compile project('libInclude')
                 compile project('libExclude')
             }
-            configurations.compile.resolutionStrategy.registerFilter(ViewFilter)
+            configurations.all {
+                resolutionStrategy.registerFilter(ViewFilter)
+            }
             class ViewFilter extends org.gradle.api.artifacts.transform.ArtifactFilter {
                 void configure(AttributeContainer from) {
                     from.attribute(Attribute.of('view', String), "filtered")
@@ -114,6 +121,13 @@ class ArtifactFilterIntegrationTest extends AbstractHttpDependencyResolutionTest
             
             task checkFiltered {
                 inputs.files(filteredView)
+                doLast {
+                    assert inputs.files.collect { it.name } == ['libInclude.jar']
+                }
+            }
+            
+            task checkFilteredCompile {
+                inputs.files(configurations.filteredCompile)
                 doLast {
                     assert inputs.files.collect { it.name } == ['libInclude.jar']
                 }
@@ -135,6 +149,13 @@ class ArtifactFilterIntegrationTest extends AbstractHttpDependencyResolutionTest
 
         when:
         succeeds "checkFiltered"
+
+        then:
+        executed ":libInclude:jar"
+        notExecuted ":libExclude:jar"
+
+        when:
+        succeeds "checkFilteredCompile"
 
         then:
         executed ":libInclude:jar"
