@@ -103,6 +103,10 @@ public class DependencyResolvingClasspath extends AbstractFileCollection {
                     result.add(file);
                 }
             }
+
+            @Override
+            public void waitForWorkToFinish() {
+            }
         });
         return result;
     }

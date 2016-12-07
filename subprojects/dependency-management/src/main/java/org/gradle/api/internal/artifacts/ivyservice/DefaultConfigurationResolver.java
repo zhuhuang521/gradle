@@ -54,6 +54,7 @@ import org.gradle.api.specs.Specs;
 import org.gradle.internal.Transformers;
 import org.gradle.internal.component.local.model.DslOriginDependencyMetadata;
 import org.gradle.internal.component.model.DependencyMetadata;
+import org.gradle.internal.operations.BuildOperationProcessor;
 import org.gradle.util.CollectionUtils;
 
 import java.util.List;
@@ -72,10 +73,12 @@ public class DefaultConfigurationResolver implements ConfigurationResolver {
     private final ResolutionResultsStoreFactory storeFactory;
     private final boolean buildProjectDependencies;
     private final AttributesSchema attributesSchema;
+    private final BuildOperationProcessor buildOperationProcessor;
 
     public DefaultConfigurationResolver(ArtifactDependencyResolver resolver, RepositoryHandler repositories,
                                         GlobalDependencyResolutionRules metadataHandler, CacheLockingManager cacheLockingManager,
-                                        ResolutionResultsStoreFactory storeFactory, boolean buildProjectDependencies, AttributesSchema attributesSchema) {
+                                        ResolutionResultsStoreFactory storeFactory, boolean buildProjectDependencies, AttributesSchema attributesSchema,
+                                        BuildOperationProcessor buildOperationProcessor) {
         this.resolver = resolver;
         this.repositories = repositories;
         this.metadataHandler = metadataHandler;
@@ -83,6 +86,7 @@ public class DefaultConfigurationResolver implements ConfigurationResolver {
         this.storeFactory = storeFactory;
         this.buildProjectDependencies = buildProjectDependencies;
         this.attributesSchema = attributesSchema;
+        this.buildOperationProcessor = buildOperationProcessor;
     }
 
     @Override
@@ -90,7 +94,7 @@ public class DefaultConfigurationResolver implements ConfigurationResolver {
         FileDependencyCollectingGraphVisitor fileDependenciesVisitor = new FileDependencyCollectingGraphVisitor();
         DefaultResolvedArtifactsBuilder artifactsVisitor = new DefaultResolvedArtifactsBuilder(buildProjectDependencies);
         resolver.resolve(configuration, ImmutableList.<ResolutionAwareRepository>of(), metadataHandler, IS_LOCAL_EDGE, fileDependenciesVisitor, artifactsVisitor, attributesSchema);
-        ArtifactTransformer transformer = new ArtifactTransformer(configuration.getResolutionStrategy(), attributesSchema);
+        ArtifactTransformer transformer = new ArtifactTransformer(configuration.getResolutionStrategy(), attributesSchema, buildOperationProcessor);
         result.graphResolved(new BuildDependenciesOnlyVisitedArtifactSet(artifactsVisitor.complete(), fileDependenciesVisitor, transformer));
     }
 
@@ -118,7 +122,7 @@ public class DefaultConfigurationResolver implements ConfigurationResolver {
 
         resolver.resolve(configuration, resolutionAwareRepositories, metadataHandler, Specs.<DependencyMetadata>satisfyAll(), graphVisitor, artifactsVisitor, attributesSchema);
 
-        ArtifactTransformer transformer = new ArtifactTransformer(configuration.getResolutionStrategy(), attributesSchema);
+        ArtifactTransformer transformer = new ArtifactTransformer(configuration.getResolutionStrategy(), attributesSchema, buildOperationProcessor);
         VisitedArtifactsResults artifactsResults = artifactsBuilder.complete();
         results.graphResolved(newModelBuilder.complete(), localComponentsVisitor, new BuildDependenciesOnlyVisitedArtifactSet(artifactsResults, fileDependencyVisitor, transformer));
 
@@ -133,7 +137,7 @@ public class DefaultConfigurationResolver implements ConfigurationResolver {
 
         TransientConfigurationResultsLoader transientConfigurationResultsFactory = new TransientConfigurationResultsLoader(transientConfigurationResultsBuilder, graphResults);
 
-        ArtifactTransformer transformer = new ArtifactTransformer(configuration.getResolutionStrategy(), attributesSchema);
+        ArtifactTransformer transformer = new ArtifactTransformer(configuration.getResolutionStrategy(), attributesSchema, buildOperationProcessor);
         DefaultLenientConfiguration result = new DefaultLenientConfiguration(configuration, cacheLockingManager, graphResults.getUnresolvedDependencies(), artifactResults, resolveState.fileDependencyResults, transientConfigurationResultsFactory, transformer);
         results.artifactsResolved(new DefaultResolvedConfiguration(result, configuration.getAttributes()), result);
     }

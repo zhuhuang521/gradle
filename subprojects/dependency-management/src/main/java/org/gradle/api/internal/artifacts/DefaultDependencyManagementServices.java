@@ -65,6 +65,7 @@ import org.gradle.initialization.ProjectAccessListener;
 import org.gradle.internal.authentication.AuthenticationSchemeRegistry;
 import org.gradle.internal.component.external.model.ModuleComponentArtifactMetadata;
 import org.gradle.internal.event.ListenerManager;
+import org.gradle.internal.operations.BuildOperationProcessor;
 import org.gradle.internal.progress.BuildOperationExecutor;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.resource.local.LocallyAvailableResourceFinder;
@@ -178,7 +179,8 @@ public class DefaultDependencyManagementServices implements DependencyManagement
                                                        CacheLockingManager cacheLockingManager,
                                                        ResolutionResultsStoreFactory resolutionResultsStoreFactory,
                                                        StartParameter startParameter,
-                                                       AttributesSchema attributesSchema) {
+                                                       AttributesSchema attributesSchema,
+                                                       BuildOperationProcessor buildOperationProcessor) {
             return new ErrorHandlingConfigurationResolver(
                     new ShortCircuitEmptyConfigurationResolver(
                         new DefaultConfigurationResolver(
@@ -187,7 +189,7 @@ public class DefaultDependencyManagementServices implements DependencyManagement
                             metadataHandler,
                             cacheLockingManager,
                             resolutionResultsStoreFactory,
-                            startParameter.isBuildProjectDependencies(), attributesSchema),
+                            startParameter.isBuildProjectDependencies(), attributesSchema, buildOperationProcessor),
                         componentIdentifierFactory)
             );
         }

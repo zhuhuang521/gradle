@@ -18,6 +18,7 @@ package org.gradle.api.internal.artifacts.transform;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.gradle.api.Action;
 import org.gradle.api.Buildable;
 import org.gradle.api.Nullable;
 import org.gradle.api.Transformer;
@@ -39,6 +40,9 @@ import org.gradle.internal.Pair;
 import org.gradle.internal.component.local.model.ComponentFileArtifactIdentifier;
 import org.gradle.internal.component.model.DefaultIvyArtifactName;
 import org.gradle.internal.component.model.IvyArtifactName;
+import org.gradle.internal.operations.BuildOperationProcessor;
+import org.gradle.internal.operations.BuildOperationQueue;
+import org.gradle.internal.operations.RunnableBuildOperation;
 import org.gradle.internal.resolve.ArtifactResolveException;
 
 import java.io.File;
@@ -54,22 +58,25 @@ public class ArtifactTransformer {
     private final ArtifactAttributeMatcher attributeMatcher;
     private final Map<Pair<File, AttributeContainer>, List<File>> transformedFiles = Maps.newHashMap();
     private final Map<Pair<ResolvedArtifact, AttributeContainer>, List<ResolvedArtifact>> transformedArtifacts = Maps.newHashMap();
+    private final BuildOperationProcessor buildOperationProcessor;
 
-    public ArtifactTransformer(ArtifactTransforms artifactTransforms, ArtifactAttributeMatcher attributeMatcher) {
+    public ArtifactTransformer(ArtifactTransforms artifactTransforms, ArtifactAttributeMatcher attributeMatcher, BuildOperationProcessor buildOperationProcessor) {
         this.artifactTransforms = artifactTransforms;
         this.attributeMatcher = attributeMatcher;
+        this.buildOperationProcessor = buildOperationProcessor;
     }
 
-    public ArtifactTransformer(ResolutionStrategyInternal resolutionStrategy, AttributesSchema attributesSchema) {
+    public ArtifactTransformer(ResolutionStrategyInternal resolutionStrategy, AttributesSchema attributesSchema, BuildOperationProcessor buildOperationProcessor) {
         this.attributeMatcher = new ArtifactAttributeMatcher(attributesSchema);
         this.artifactTransforms = new InstantiatingArtifactTransforms(resolutionStrategy, this.attributeMatcher);
+        this.buildOperationProcessor = buildOperationProcessor;
     }
 
     private boolean matchArtifactsAttributes(HasAttributes candidate, AttributeContainer requested) {
         return attributeMatcher.attributesMatch(candidate, requested, candidate.getAttributes());
     }
 
-    private Transformer<List<File>, File> getTransform(HasAttributes from, AttributeContainer to) {
+    private Pair<Transformer<List<File>, File>, RunnableBuildOperation> getTransform(HasAttributes from, AttributeContainer to) {
         return artifactTransforms.getTransform(from.getAttributes(), to);
     }
 
@@ -124,6 +131,8 @@ public class ArtifactTransformer {
         }
         final AttributeContainer immutableAttributes = attributes.asImmutable();
         return new ArtifactVisitor() {
+            public List<RunnableBuildOperation> contentTransforms = Lists.newArrayList();
+
             @Override
             public void visitArtifact(final ResolvedArtifact artifact) {
                 List<ResolvedArtifact> transformResults = transformedArtifacts.get(Pair.of(artifact, immutableAttributes));
@@ -134,7 +143,7 @@ public class ArtifactTransformer {
                     return;
                 }
 
-                final Transformer<List<File>, File> transform = getTransform(artifact, immutableAttributes);
+                final Pair<Transformer<List<File>, File>, RunnableBuildOperation> transform = getTransform(artifact, immutableAttributes);
                 if (transform == null) {
                     if (matchArtifactsAttributes(artifact, immutableAttributes)) {
                         visitor.visitArtifact(artifact);
@@ -146,7 +155,7 @@ public class ArtifactTransformer {
                 TaskDependency buildDependencies = ((Buildable) artifact).getBuildDependencies();
 
                 transformResults = Lists.newArrayList();
-                List<File> transformedFiles = transform.transform(artifact.getFile());
+                List<File> transformedFiles = transform.getLeft().transform(artifact.getFile());
                 for (final File output : transformedFiles) {
                     ComponentArtifactIdentifier newId = new ComponentFileArtifactIdentifier(artifact.getId().getComponentIdentifier(), output.getName());
                     IvyArtifactName artifactName = DefaultIvyArtifactName.forAttributeContainer(output.getName(), immutableAttributes);
@@ -155,6 +164,7 @@ public class ArtifactTransformer {
                     visitor.visitArtifact(resolvedArtifact);
                 }
                 transformedArtifacts.put(Pair.of(artifact, immutableAttributes), transformResults);
+                contentTransforms.add(transform.getRight());
             }
 
             @Override
@@ -176,7 +186,7 @@ public class ArtifactTransformer {
                             }
 
                             HasAttributes fileWithAttributes = DefaultArtifactAttributes.forFile(file);
-                            Transformer<List<File>, File> transform = getTransform(fileWithAttributes, immutableAttributes);
+                            Pair<Transformer<List<File>, File>, RunnableBuildOperation> transform = getTransform(fileWithAttributes, immutableAttributes);
                             if (transform == null) {
                                 if (matchArtifactsAttributes(fileWithAttributes, immutableAttributes)) {
                                     result.add(file);
@@ -184,9 +194,10 @@ public class ArtifactTransformer {
                                 }
                                 continue;
                             }
-                            transformResults = transform.transform(file);
+                            transformResults = transform.getLeft().transform(file);
                             transformedFiles.put(Pair.of(file, immutableAttributes), transformResults);
                             result.addAll(transformResults);
+                            contentTransforms.add(transform.getRight());
                         } catch (RuntimeException e) {
                             transformException = e;
                             break;
@@ -202,6 +213,18 @@ public class ArtifactTransformer {
                 if (!result.isEmpty()) {
                     visitor.visitFiles(componentIdentifier, result);
                 }
+            }
+
+            @Override
+            public void waitForWorkToFinish() {
+                buildOperationProcessor.run(new Action<BuildOperationQueue<RunnableBuildOperation>>() {
+                    @Override
+                    public void execute(BuildOperationQueue<RunnableBuildOperation> buildOperationQueue) {
+                        for (RunnableBuildOperation transform : contentTransforms) {
+                            buildOperationQueue.add(transform);
+                        }
+                    }
+                });
             }
         };
     }

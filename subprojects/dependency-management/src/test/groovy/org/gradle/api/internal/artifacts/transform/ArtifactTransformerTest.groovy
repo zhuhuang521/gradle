@@ -36,7 +36,7 @@ class ArtifactTransformerTest extends Specification {
     def attributesSchema = new DefaultAttributesSchema()
     def artifactTransforms = Mock(ArtifactTransforms)
     def artifactAttributeMatcher = new ArtifactAttributeMatcher(attributesSchema);
-    def transformer = new ArtifactTransformer(artifactTransforms, artifactAttributeMatcher)
+    def transformer = new ArtifactTransformer(artifactTransforms, artifactAttributeMatcher, null)
 
     def setup() {
         attributesSchema.attribute(ARTIFACT_FORMAT) {

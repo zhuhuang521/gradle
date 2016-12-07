@@ -277,6 +277,7 @@ public class DefaultLenientConfiguration implements LenientConfiguration, Visite
                 fileDependencyResults.getFiles().visit(transformingVisitor);
             }
             artifactResults.getArtifacts().visit(transformingVisitor);
+            transformingVisitor.waitForWorkToFinish();
             return;
         }
 
@@ -296,6 +297,8 @@ public class DefaultLenientConfiguration implements LenientConfiguration, Visite
             walker.add(node);
         }
         walker.findValues();
+
+        transformingVisitor.waitForWorkToFinish();
     }
 
     public Configuration getConfiguration() {
@@ -335,6 +338,10 @@ public class DefaultLenientConfiguration implements LenientConfiguration, Visite
             } catch (Throwable t) {
                 failures.add(t);
             }
+        }
+
+        @Override
+        public void waitForWorkToFinish() {
         }
 
         public void addArtifacts() {
@@ -393,6 +400,10 @@ public class DefaultLenientConfiguration implements LenientConfiguration, Visite
             } catch (Throwable t) {
                 failures.add(t);
             }
+        }
+
+        @Override
+        public void waitForWorkToFinish() {
         }
     }
 

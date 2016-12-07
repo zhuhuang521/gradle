@@ -40,4 +40,7 @@ public abstract class ArtifactTransform {
     public abstract void configure(AttributeContainer from, ArtifactTransformTargets targetRegistry);
 
     public abstract List<File> transform(File input, AttributeContainer target);
+
+    public void contentTransform() {
+    }
 }

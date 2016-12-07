@@ -21,6 +21,8 @@ import org.gradle.api.artifacts.transform.ArtifactTransform;
 import org.gradle.api.artifacts.transform.ArtifactTransformException;
 import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.internal.artifacts.configurations.ResolutionStrategyInternal;
+import org.gradle.internal.Pair;
+import org.gradle.internal.operations.RunnableBuildOperation;
 import org.gradle.internal.reflect.DirectInstantiator;
 
 import java.io.File;
@@ -37,7 +39,7 @@ class InstantiatingArtifactTransforms implements ArtifactTransforms {
     }
 
     @Override
-    public Transformer<List<File>, File> getTransform(AttributeContainer from, AttributeContainer to) {
+    public Pair<Transformer<List<File>, File>, RunnableBuildOperation> getTransform(AttributeContainer from, AttributeContainer to) {
         for (ArtifactTransformRegistrations.ArtifactTransformRegistration transformReg : resolutionStrategy.getTransforms()) {
             if (attributeMatcher.attributesMatch(from, transformReg.from, transformReg.from)
                 && attributeMatcher.attributesMatch(to, transformReg.to, transformReg.to)) {
@@ -47,15 +49,39 @@ class InstantiatingArtifactTransforms implements ArtifactTransforms {
         return null;
     }
 
-    private Transformer<List<File>, File> createArtifactTransformer(ArtifactTransformRegistrations.ArtifactTransformRegistration registration) {
+    private RunnableBuildOperation contentTransformRunnable(final ArtifactFileTransformer artifactTransformer) {
+        return new RunnableBuildOperation() {
+            @Override
+            public String getDescription() {
+                return "Transform from " + artifactTransformer.input + " to " +artifactTransformer.outputs;
+            }
+
+            @Override
+            public void run() {
+                artifactTransformer.artifactTransform.contentTransform();
+                for (File output : artifactTransformer.outputs) {
+                    if (!output.exists()) {
+                        throw new ArtifactTransformException(artifactTransformer.input, artifactTransformer.outputAttributes, artifactTransformer.artifactTransform,
+                            new FileNotFoundException("ArtifactTransform output '" + output.getPath() + "' does not exist"));
+                    }
+                }
+            }
+        };
+    }
+
+    private Pair<Transformer<List<File>, File>, RunnableBuildOperation> createArtifactTransformer(ArtifactTransformRegistrations.ArtifactTransformRegistration registration) {
         ArtifactTransform artifactTransform = DirectInstantiator.INSTANCE.newInstance(registration.type);
         registration.config.execute(artifactTransform);
-        return new ArtifactFileTransformer(artifactTransform, registration.to);
+        ArtifactFileTransformer artifactFileTransformer = new ArtifactFileTransformer(artifactTransform, registration.to);
+        RunnableBuildOperation contentTransform = contentTransformRunnable(artifactFileTransformer);
+        return Pair.<Transformer<List<File>, File>, RunnableBuildOperation>of(artifactFileTransformer, contentTransform);
     }
 
     private static class ArtifactFileTransformer implements Transformer<List<File>, File> {
         private final ArtifactTransform artifactTransform;
         private final AttributeContainer outputAttributes;
+        private File input;
+        private List<File> outputs;
 
         private ArtifactFileTransformer(ArtifactTransform artifactTransform, AttributeContainer outputAttributes) {
             this.artifactTransform = artifactTransform;
@@ -64,17 +90,13 @@ class InstantiatingArtifactTransforms implements ArtifactTransforms {
 
         @Override
         public List<File> transform(File input) {
+            this.input = input;
             if (artifactTransform.getOutputDirectory() != null) {
                 artifactTransform.getOutputDirectory().mkdirs();
             }
-            List<File> outputs = doTransform(input);
+            outputs = doTransform(input);
             if (outputs == null) {
                 throw new ArtifactTransformException(input, outputAttributes, artifactTransform, new NullPointerException("Illegal null output from ArtifactTransform"));
-            }
-            for (File output : outputs) {
-                if (!output.exists()) {
-                    throw new ArtifactTransformException(input, outputAttributes, artifactTransform, new FileNotFoundException("ArtifactTransform output '" + output.getPath() + "' does not exist"));
-                }
             }
             return outputs;
         }

@@ -42,4 +42,8 @@ class ArtifactCollectingVisitor implements ArtifactVisitor {
     public void visitFiles(@Nullable ComponentIdentifier componentIdentifier, Iterable<File> files) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void waitForWorkToFinish() {
+    }
 }

@@ -40,4 +40,6 @@ public interface ArtifactVisitor {
      * Visits a file collection. Should be considered a set of artifacts but is separate as a migration step.
      */
     void visitFiles(@Nullable ComponentIdentifier componentIdentifier, Iterable<File> files);
+
+    void waitForWorkToFinish();
 }
