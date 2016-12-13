@@ -21,6 +21,7 @@ import org.gradle.foundation.TestUtility
 import org.gradle.gradleplugin.foundation.GradlePluginLord
 import org.gradle.integtests.fixtures.AbstractIntegrationSpec
 import org.gradle.testfixtures.internal.NativeServicesTestFixture
+import org.junit.Rule
 
 import java.util.concurrent.TimeUnit
 
@@ -28,10 +29,14 @@ class ModelTasksGradleUIIntegrationTest extends AbstractIntegrationSpec {
 
     GradlePluginLord gradlePluginLord = new GradlePluginLord()
 
+    @Rule
+    public final NoDotGradleDir noDotGradleDir = new NoDotGradleDir()
+
+
     def setup() {
         NativeServicesTestFixture.initialize()
-        gradlePluginLord.setCurrentDirectory(temporaryFolder.testDirectory);
-        gradlePluginLord.setGradleHomeDirectory(distribution.gradleHomeDir);
+        gradlePluginLord.setCurrentDirectory(temporaryFolder.testDirectory)
+        gradlePluginLord.setGradleHomeDirectory(distribution.gradleHomeDir)
         gradlePluginLord.addCommandLineArgumentAlteringListener(new ExtraTestCommandLineOptionsListener(executer.gradleUserHomeDir))
 
         file('build.gradle') << '''
@@ -46,20 +51,20 @@ class ModelTasksGradleUIIntegrationTest extends AbstractIntegrationSpec {
                 }
             }
         '''
-        TestUtility.refreshProjectsBlocking(gradlePluginLord, 40, TimeUnit.SECONDS);
+        TestUtility.refreshProjectsBlocking(gradlePluginLord, 40, TimeUnit.SECONDS)
 
     }
 
     def "tasks added using model rule are visible"() {
         when:
-        List<ProjectView> projects = gradlePluginLord.getProjects();
+        List<ProjectView> projects = gradlePluginLord.getProjects()
 
         then:
         projects.first().getTask("fromModel")
     }
 
     def "tasks added using model rule can be executed"() {
-        TestExecutionInteraction executionInteraction = new TestExecutionInteraction();
+        TestExecutionInteraction executionInteraction = new TestExecutionInteraction()
 
         when:
         TestUtility.executeBlocking(gradlePluginLord, "fromModel", "Test Execution", executionInteraction, 40)

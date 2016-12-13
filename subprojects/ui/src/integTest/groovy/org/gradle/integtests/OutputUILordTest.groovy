@@ -42,6 +42,8 @@ import static org.hamcrest.Matchers.startsWith
 class OutputUILordTest {
 
     @Rule public final TestNameTestDirectoryProvider temporaryFolder = new TestNameTestDirectoryProvider()
+    @Rule
+    public final NoDotGradleDir noDotGradleDir = new NoDotGradleDir()
 
     @Rule public OpenApiFixture openApi = new OpenApiFixture(temporaryFolder)
     @Rule public TestResources resources = new TestResources(temporaryFolder, 'testProject')

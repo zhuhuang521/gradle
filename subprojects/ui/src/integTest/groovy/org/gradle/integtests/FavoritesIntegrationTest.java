@@ -42,6 +42,8 @@ import java.util.List;
 public class FavoritesIntegrationTest {
     @Rule
     public final TestNameTestDirectoryProvider tempDir = new TestNameTestDirectoryProvider();
+    @Rule
+    public final NoDotGradleDir noDotGradleDir = new NoDotGradleDir();
     private BuildInformation buildInformation;
 
     private ProjectView myRootProject;

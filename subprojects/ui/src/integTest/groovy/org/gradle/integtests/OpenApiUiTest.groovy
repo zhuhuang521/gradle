@@ -53,9 +53,11 @@ import static org.hamcrest.Matchers.*
 class OpenApiUiTest {
 
     @Rule public final TestNameTestDirectoryProvider temporaryFolder = new TestNameTestDirectoryProvider()
-    private IntegrationTestBuildContext buildContext = new IntegrationTestBuildContext();
+    private IntegrationTestBuildContext buildContext = new IntegrationTestBuildContext()
     @Rule public OpenApiFixture openApi = new OpenApiFixture(temporaryFolder)
     @ClassRule public static PreconditionVerifier verifier = new PreconditionVerifier()
+    @Rule
+    public final NoDotGradleDir noDotGradleDir = new NoDotGradleDir()
 
     @Before
     void setup() {
@@ -78,7 +80,7 @@ class OpenApiUiTest {
         Assert.assertNotNull(singlePane)
 
         //tell it we're about to show it, so it'll create a component
-        singlePane.aboutToShow();
+        singlePane.aboutToShow()
 
         //make sure we now have that component
         Assert.assertNotNull(singlePane.getComponent())
@@ -292,32 +294,32 @@ class OpenApiUiTest {
 
         Assert.assertEquals("Execution Failed: " + testRequestObserver.output, 0, testRequestObserver.result)
 
-        java.util.List<ProjectVersion1> rootProjects = gradleInterface.getRootProjects();
-        Assert.assertFalse(rootProjects.isEmpty());   //do we have any root projects?
+        java.util.List<ProjectVersion1> rootProjects = gradleInterface.getRootProjects()
+        Assert.assertFalse(rootProjects.isEmpty())   //do we have any root projects?
 
-        ProjectVersion1 rootProject = rootProjects.get(0);
-        Assert.assertNotNull(rootProject);
+        ProjectVersion1 rootProject = rootProjects.get(0)
+        Assert.assertNotNull(rootProject)
         Assert.assertThat(rootProject.getSubProjects().size(), equalTo(2))
 
         //Quick check to make sure there are tasks on each of the sub projects.
         //The exact task names will change over time, so I don't want to try
         //to test for those. I'll just make sure there are several.
-        Iterator<ProjectVersion1> iterator = rootProjects.get(0).getSubProjects().iterator();
+        Iterator<ProjectVersion1> iterator = rootProjects.get(0).getSubProjects().iterator()
         while (iterator.hasNext()) {
-            ProjectVersion1 projectVersion1 = iterator.next();
-            Assert.assertTrue(projectVersion1.getTasks().size() > 4);
+            ProjectVersion1 projectVersion1 = iterator.next()
+            Assert.assertTrue(projectVersion1.getTasks().size() > 4)
         }
 
         //there should be a 'services' project
-        ProjectVersion1 servicesProject = rootProjects.get(0).getSubProject("services");
-        Assert.assertNotNull(servicesProject);
+        ProjectVersion1 servicesProject = rootProjects.get(0).getSubProject("services")
+        Assert.assertNotNull(servicesProject)
 
         //and it contains a 'webservice' sub project
-        ProjectVersion1 webserviceProject = servicesProject.getSubProject("webservice");
-        Assert.assertNotNull(webserviceProject);
+        ProjectVersion1 webserviceProject = servicesProject.getSubProject("webservice")
+        Assert.assertNotNull(webserviceProject)
 
-        ProjectVersion1 apiProject = rootProjects.get(0).getSubProject("api");
-        Assert.assertNotNull(apiProject);
+        ProjectVersion1 apiProject = rootProjects.get(0).getSubProject("api")
+        Assert.assertNotNull(apiProject)
 
         //verify the root project is set correctly
         Assert.assertEquals(servicesProject, webserviceProject.getParentProject())
@@ -331,7 +333,7 @@ class OpenApiUiTest {
         Assert.assertEquals(webserviceProject, foundProject)
 
         //verify that are multiple tasks here (we know their should be)
-        Assert.assertTrue(webserviceProject.getTasks().size() > 4);
+        Assert.assertTrue(webserviceProject.getTasks().size() > 4)
 
         //verify getTaskFromFullPath works
         TaskVersion1 apiBuildTask = rootProject.getTaskFromFullPath(":api:build")
@@ -394,7 +396,7 @@ class OpenApiUiTest {
 
         Assert.assertEquals("Execution Failed: " + testRequestObserver.output, 0, testRequestObserver.result)
 
-        Assert.assertEquals("Not our request", request, testRequestObserver.request);
+        Assert.assertEquals("Not our request", request, testRequestObserver.request)
     }
 
     /**
@@ -407,7 +409,7 @@ class OpenApiUiTest {
     @Test
     void testAddingComponentToSetupTab() {
         if (java.awt.GraphicsEnvironment.isHeadless()) {
-            return;  // Can't run this test in headless mode!
+            return  // Can't run this test in headless mode!
         }
 
         JLabel label = new JLabel("Testing Testing 123")
@@ -420,7 +422,7 @@ class OpenApiUiTest {
         Assert.assertFalse(hierarchyAdapter.componentWasShown)
         Assert.assertFalse(hierarchyAdapter.componentWasHidden)
 
-        singlePane.aboutToShow();
+        singlePane.aboutToShow()
 
         singlePane.setCustomPanelToSetupTab(label)
 
@@ -432,9 +434,9 @@ class OpenApiUiTest {
         JFrame frame = openApi.open(singlePane)
 
         //set the Setup tab as the current tab. This is required to actually show the component.
-        int setupTabIndex = singlePane.getGradleTabIndex("Setup");
+        int setupTabIndex = singlePane.getGradleTabIndex("Setup")
         Assert.assertTrue("Failed to get index of setup tab", setupTabIndex != -1)
-        singlePane.setCurrentGradleTab(setupTabIndex);
+        singlePane.setCurrentGradleTab(setupTabIndex)
 
         //still should not show the component (its not yet visible, but is about to be)
         Assert.assertFalse(hierarchyAdapter.componentWasShown)
@@ -461,7 +463,7 @@ class OpenApiUiTest {
     @Test
     void testAddingCustomTab() {
         if (java.awt.GraphicsEnvironment.isHeadless()) {
-            return;  // Can't run this test in headless mode!
+            return  // Can't run this test in headless mode!
         }
 
         TestTab testTab = new TestTab()
@@ -473,11 +475,11 @@ class OpenApiUiTest {
         Assert.assertFalse(testTab.hierarchyAdapter.componentWasHidden)
 
         //make sure things are initialized properly. These should all be false
-        Assert.assertFalse(testTab.nameRetrieved);
-        Assert.assertFalse(testTab.informedAboutToShow);
-        Assert.assertFalse(testTab.componentCreated);
+        Assert.assertFalse(testTab.nameRetrieved)
+        Assert.assertFalse(testTab.informedAboutToShow)
+        Assert.assertFalse(testTab.componentCreated)
 
-        int originalCount = singlePane.getGradleTabCount();
+        int originalCount = singlePane.getGradleTabCount()
 
         singlePane.addTab(99, testTab) //I don't really care about the index. It should accept a number that is too large and handle it appropriately.
 
@@ -518,16 +520,16 @@ class OpenApiUiTest {
         Assert.assertTrue(testTab.hierarchyAdapter.componentWasHidden)
 
         //at the end, the name should have been queried, we should have been told we were about to shown, and the component should be created
-        Assert.assertTrue(testTab.nameRetrieved);
-        Assert.assertTrue(testTab.informedAboutToShow);
-        Assert.assertTrue(testTab.componentCreated);
+        Assert.assertTrue(testTab.nameRetrieved)
+        Assert.assertTrue(testTab.informedAboutToShow)
+        Assert.assertTrue(testTab.componentCreated)
 
         //reset the test tab (resets the listener so we can remove the tab and verify that it no longer shows up, as well as some of our test variables)
         testTab.reset()
         singlePane.removeTab(testTab)
 
         //I'm going to set the current tab, but this shouldn't do anything because the tab was removed
-        singlePane.setCurrentGradleTab(testTabIndex);
+        singlePane.setCurrentGradleTab(testTabIndex)
 
         //part of showing the UI is telling it its about to be shown. In this case, nothing should happen
         //related to the test tab. It has been removed
@@ -538,13 +540,13 @@ class OpenApiUiTest {
         openApi.flushEventQueue(frame)
 
         //try to get the test tab
-        testTabIndex = singlePane.getGradleTabIndex("Test Tab");
+        testTabIndex = singlePane.getGradleTabIndex("Test Tab")
         Assert.assertTrue("Erroneously got index of test tab. It was removed", testTabIndex == -1)
 
         //we've removed it, so it shouldn't have been polled about or informed of anything
-        Assert.assertFalse(testTab.nameRetrieved);
-        Assert.assertFalse(testTab.informedAboutToShow);
-        Assert.assertFalse(testTab.componentCreated);
+        Assert.assertFalse(testTab.nameRetrieved)
+        Assert.assertFalse(testTab.informedAboutToShow)
+        Assert.assertFalse(testTab.componentCreated)
 
         //It was not shown after the reset, these should both be false
         Assert.assertFalse(testTab.hierarchyAdapter.componentWasShown)
@@ -561,37 +563,37 @@ class OpenApiUiTest {
      */
     @Test
     void testSettings() {
-        TestSettingsNodeVersion1 settingsNode = new TestSettingsNodeVersion1();
+        TestSettingsNodeVersion1 settingsNode = new TestSettingsNodeVersion1()
 
-        TestSingleDualPaneUIInteractionVersion1 testSingleDualPaneUIInteractionVersion1 = new TestSingleDualPaneUIInteractionVersion1(new TestAlternateUIInteractionVersion1(), settingsNode);
-        SinglePaneUIVersion1 singlePane = openApi.createSinglePaneUI(testSingleDualPaneUIInteractionVersion1);
+        TestSingleDualPaneUIInteractionVersion1 testSingleDualPaneUIInteractionVersion1 = new TestSingleDualPaneUIInteractionVersion1(new TestAlternateUIInteractionVersion1(), settingsNode)
+        SinglePaneUIVersion1 singlePane = openApi.createSinglePaneUI(testSingleDualPaneUIInteractionVersion1)
 
-        File illegalDirectory = temporaryFolder.testDirectory.file("non-existant").createDir();
+        File illegalDirectory = temporaryFolder.testDirectory.file("non-existant").createDir()
         if (illegalDirectory.equals(singlePane.getCurrentDirectory())) {
-            throw new AssertionError("Directory already set to 'test' directory. The test is not setup correctly.");
+            throw new AssertionError("Directory already set to 'test' directory. The test is not setup correctly.")
         }
 
         //this is required to get the ball rolling
-        singlePane.aboutToShow();
+        singlePane.aboutToShow()
 
         //set the current directory after calling aboutToShow (otherwise, it'll stomp over us when it restores its default settings)
-        singlePane.setCurrentDirectory(illegalDirectory);
+        singlePane.setCurrentDirectory(illegalDirectory)
 
         //close the UI. This saves the current settings.
-        singlePane.close();
+        singlePane.close()
 
         //now instantiate it again
-        testSingleDualPaneUIInteractionVersion1 = new TestSingleDualPaneUIInteractionVersion1(new TestAlternateUIInteractionVersion1(), settingsNode);
+        testSingleDualPaneUIInteractionVersion1 = new TestSingleDualPaneUIInteractionVersion1(new TestAlternateUIInteractionVersion1(), settingsNode)
         try {
-            singlePane = new SinglePaneUIWrapper(testSingleDualPaneUIInteractionVersion1, false);
+            singlePane = new SinglePaneUIWrapper(testSingleDualPaneUIInteractionVersion1, false)
         } catch (Exception e) {
             throw new AssertionError("Failed to extract single pane (second time): Caused by " + e.getMessage())
         }
 
         //this should restore the previous settings
-        singlePane.aboutToShow();
+        singlePane.aboutToShow()
 
-        Assert.assertEquals(illegalDirectory, singlePane.getCurrentDirectory());
+        Assert.assertEquals(illegalDirectory, singlePane.getCurrentDirectory())
     }
 
     /**
@@ -693,7 +695,7 @@ class OpenApiUiTest {
     @Test
     void testOutputPaneNumber() {
         if (java.awt.GraphicsEnvironment.isHeadless()) {
-            return;  // Can't run this test in headless mode!
+            return  // Can't run this test in headless mode!
         }
 
         SinglePaneUIWrapper panel = openApi.createSinglePaneUI()
@@ -823,7 +825,7 @@ class OpenApiUiTest {
     private File getCustomGradleExecutable() {
         //now let's set it to a custom gradle executable. We'll just point it to the regular
         //gradle file (but it'll be the custom one.
-        String name = OperatingSystem.current().getScriptName("bin/gradle");
+        String name = OperatingSystem.current().getScriptName("bin/gradle")
 
         File gradleExecutor = new File(buildContext.getGradleHomeDir(), name)
 
@@ -840,16 +842,16 @@ class OpenApiUiTest {
  * We'll use it to track if the component was shown and then hidden.
  */
 class TestVisibilityHierarchyListener implements HierarchyListener {
-    private boolean componentWasShown = false;
-    private boolean componentWasHidden = false;
+    private boolean componentWasShown = false
+    private boolean componentWasHidden = false
 
     void hierarchyChanged(HierarchyEvent e) {
         if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0) {
             if (e.getComponent().isShowing()) {
-                componentWasShown = true;
+                componentWasShown = true
             }
             else {
-                componentWasHidden = true;
+                componentWasHidden = true
             }
         }
     }
@@ -881,17 +883,17 @@ class TestTab implements GradleTabVersion1 {
     }
 
     String getName() {
-        nameRetrieved = true;
-        return "Test Tab";
+        nameRetrieved = true
+        return "Test Tab"
     }
 
     Component createComponent() {
-        componentCreated = true;
-        return label;
+        componentCreated = true
+        return label
     }
 
     void aboutToShow() {
-        informedAboutToShow = true;
+        informedAboutToShow = true
     }
 }
 
@@ -906,7 +908,7 @@ class TestCloseInteraction implements BasicGradleUIVersion1.CloseInteraction {
 
 
     def TestCloseInteraction(promptResult) {
-        this.promptResult = promptResult;
+        this.promptResult = promptResult
     }
 
     boolean promptUserToConfirmClosingWhileBusy() {
@@ -919,17 +921,17 @@ class TestCloseInteraction implements BasicGradleUIVersion1.CloseInteraction {
  * This appends a specified string to the command line when executing a command.
  */
 class TestCommandLineArgumentAlteringListenerVersion1 implements CommandLineArgumentAlteringListenerVersion1 {
-    private final String additionalArguments;
+    private final String additionalArguments
 
     def TestCommandLineArgumentAlteringListenerVersion1(additionalArguments) {
-        this.additionalArguments = additionalArguments;
+        this.additionalArguments = additionalArguments
     }
 
     String getAdditionalCommandLineArguments(String commandLineArguments) {
         if (commandLineArguments.startsWith("-s ")) {  //we're only interested in altering this one command
-            return additionalArguments;
+            return additionalArguments
         }
 
-        return null;
+        return null
     }
 }

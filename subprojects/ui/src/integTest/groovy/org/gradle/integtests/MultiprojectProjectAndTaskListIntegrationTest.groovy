@@ -42,15 +42,17 @@ class MultiprojectProjectAndTaskListIntegrationTest extends AbstractIntegrationT
     @Rule
     public final Sample sample = new Sample(testDirectoryProvider, 'java/multiproject')
     GradlePluginLord gradlePluginLord = new GradlePluginLord()
+    @Rule
+    public final NoDotGradleDir noDotGradleDir = new NoDotGradleDir()
 
     @Before
     void setUp() {
         // Tests are flaky on IBM JDK
-        Assume.assumeTrue(NOT_JDK_IBM.fulfilled);
+        Assume.assumeTrue(NOT_JDK_IBM.fulfilled)
 
         NativeServicesTestFixture.initialize()
-        gradlePluginLord.setCurrentDirectory(sample.dir);
-        gradlePluginLord.setGradleHomeDirectory(distribution.gradleHomeDir);
+        gradlePluginLord.setCurrentDirectory(sample.dir)
+        gradlePluginLord.setGradleHomeDirectory(distribution.gradleHomeDir)
         gradlePluginLord.addCommandLineArgumentAlteringListener(new ExtraTestCommandLineOptionsListener(executer.gradleUserHomeDir))
     }
 
@@ -68,31 +70,31 @@ class MultiprojectProjectAndTaskListIntegrationTest extends AbstractIntegrationT
         List<ProjectView> projects = refreshAndGetProjects()
 
         //make sure there weren't other root projects found.
-        Assert.assertEquals(1, projects.size());
+        Assert.assertEquals(1, projects.size())
 
-        ProjectView rootProject = projects.get(0);
-        Assert.assertNotNull(rootProject);
-        Assert.assertEquals("multiproject", rootProject.getName());
+        ProjectView rootProject = projects.get(0)
+        Assert.assertNotNull(rootProject)
+        Assert.assertEquals("multiproject", rootProject.getName())
 
         //now check for sub projects, api, shared, and services
-        ProjectView apiProject = rootProject.getSubProject("api");
-        Assert.assertNotNull(apiProject);
-        Assert.assertTrue(apiProject.getSubProjects().isEmpty());  //this has no sub projects
+        ProjectView apiProject = rootProject.getSubProject("api")
+        Assert.assertNotNull(apiProject)
+        Assert.assertTrue(apiProject.getSubProjects().isEmpty())  //this has no sub projects
 
-        ProjectView sharedProject = rootProject.getSubProject("shared");
-        Assert.assertNotNull(sharedProject);
-        Assert.assertTrue(sharedProject.getSubProjects().isEmpty());  //this has no sub projects
+        ProjectView sharedProject = rootProject.getSubProject("shared")
+        Assert.assertNotNull(sharedProject)
+        Assert.assertTrue(sharedProject.getSubProjects().isEmpty())  //this has no sub projects
 
-        ProjectView servicesProject = rootProject.getSubProject("services");
-        Assert.assertNotNull(servicesProject);
+        ProjectView servicesProject = rootProject.getSubProject("services")
+        Assert.assertNotNull(servicesProject)
 
         //services has a sub project
-        ProjectView webservicesProject = servicesProject.getSubProject("webservice");
-        Assert.assertNotNull(webservicesProject);
-        Assert.assertTrue(webservicesProject.getSubProjects().isEmpty());  //this has no sub projects
+        ProjectView webservicesProject = servicesProject.getSubProject("webservice")
+        Assert.assertNotNull(webservicesProject)
+        Assert.assertTrue(webservicesProject.getSubProjects().isEmpty())  //this has no sub projects
 
         //make sure we didn't inadvertantly find other sub projects.
-        Assert.assertEquals(3, rootProject.getSubProjects().size());
+        Assert.assertEquals(3, rootProject.getSubProjects().size())
     }
 
     /**
@@ -101,46 +103,46 @@ class MultiprojectProjectAndTaskListIntegrationTest extends AbstractIntegrationT
     @Test
     public void testOpenAPIWrapperProjectAndTaskList() {
 
-        GradleInterfaceWrapperVersion1 wrapper = new GradleInterfaceWrapperVersion1(gradlePluginLord);
+        GradleInterfaceWrapperVersion1 wrapper = new GradleInterfaceWrapperVersion1(gradlePluginLord)
 
         //the rest of this uses the open API mechanism to access the projects and tasks
         refreshProjectsAndWait()
 
         //get the root project
-        List<ProjectVersion1> projects = wrapper.getRootProjects();
-        Assert.assertNotNull(projects);
+        List<ProjectVersion1> projects = wrapper.getRootProjects()
+        Assert.assertNotNull(projects)
 
         //make sure there weren't other root projects found.
-        Assert.assertEquals(1, projects.size());
+        Assert.assertEquals(1, projects.size())
 
-        ProjectVersion1 rootProject = projects.get(0);
-        Assert.assertNotNull(rootProject);
-        Assert.assertEquals("multiproject", rootProject.getName());
+        ProjectVersion1 rootProject = projects.get(0)
+        Assert.assertNotNull(rootProject)
+        Assert.assertEquals("multiproject", rootProject.getName())
 
         //now check for sub projects, api, shared, and services
-        ProjectVersion1 apiProject = rootProject.getSubProject("api");
-        Assert.assertNotNull(apiProject);
-        Assert.assertTrue(apiProject.getSubProjects().isEmpty());  //this has no sub projects
+        ProjectVersion1 apiProject = rootProject.getSubProject("api")
+        Assert.assertNotNull(apiProject)
+        Assert.assertTrue(apiProject.getSubProjects().isEmpty())  //this has no sub projects
 
-        ProjectVersion1 sharedProject = rootProject.getSubProject("shared");
-        Assert.assertNotNull(sharedProject);
-        Assert.assertTrue(sharedProject.getSubProjects().isEmpty());  //this has no sub projects
+        ProjectVersion1 sharedProject = rootProject.getSubProject("shared")
+        Assert.assertNotNull(sharedProject)
+        Assert.assertTrue(sharedProject.getSubProjects().isEmpty())  //this has no sub projects
 
-        ProjectVersion1 servicesProject = rootProject.getSubProject("services");
-        Assert.assertNotNull(servicesProject);
+        ProjectVersion1 servicesProject = rootProject.getSubProject("services")
+        Assert.assertNotNull(servicesProject)
 
         //services has a sub project
-        ProjectVersion1 webservicesProject = servicesProject.getSubProject("webservice");
-        Assert.assertNotNull(webservicesProject);
-        Assert.assertTrue(webservicesProject.getSubProjects().isEmpty());  //this has no sub projects
+        ProjectVersion1 webservicesProject = servicesProject.getSubProject("webservice")
+        Assert.assertNotNull(webservicesProject)
+        Assert.assertTrue(webservicesProject.getSubProjects().isEmpty())  //this has no sub projects
 
         //make sure we didn't inadvertantly find other sub projects.
-        Assert.assertEquals(3, rootProject.getSubProjects().size());
+        Assert.assertEquals(3, rootProject.getSubProjects().size())
 
         //I don't want to keep the actual tasks in synch, but let's make sure there's something there.
         def tasks = apiProject.getTasks()
-        Assert.assertNotNull(tasks);
-        Assert.assertFalse(tasks.isEmpty());
+        Assert.assertNotNull(tasks)
+        Assert.assertFalse(tasks.isEmpty())
     }
 
     /**
@@ -151,7 +153,7 @@ class MultiprojectProjectAndTaskListIntegrationTest extends AbstractIntegrationT
     public void testSubProjectFromFullPath() {
 
         List<ProjectView> projects = refreshAndGetProjects()
-        Assert.assertFalse(projects.isEmpty());
+        Assert.assertFalse(projects.isEmpty())
 
         ProjectView rootProject = projects.get(0)
 
@@ -175,7 +177,7 @@ class MultiprojectProjectAndTaskListIntegrationTest extends AbstractIntegrationT
     public void testGetTaskFromFullPath() {
 
         List<ProjectView> projects = refreshAndGetProjects()
-        Assert.assertFalse(projects.isEmpty());
+        Assert.assertFalse(projects.isEmpty())
 
         ProjectView rootProject = projects.get(0)
 
