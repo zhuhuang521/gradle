@@ -85,7 +85,7 @@ public class ComponentAttributeMatcher {
                 result.add(candidate);
             }
         }
-        System.err.println(CACHE.stats());
+        //System.err.println(CACHE.stats());
         return result;
     }
 
