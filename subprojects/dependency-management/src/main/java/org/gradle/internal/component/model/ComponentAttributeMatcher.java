@@ -50,6 +50,7 @@ public class ComponentAttributeMatcher {
 
     private static final LoadingCache<Key, BitSet> CACHE = CacheBuilder.newBuilder()
         .maximumSize(1000)
+        .recordStats()
         .build(new CacheLoader<Key, BitSet>() {
             @Override
             public BitSet load(Key key) throws Exception {
@@ -84,6 +85,7 @@ public class ComponentAttributeMatcher {
                 result.add(candidate);
             }
         }
+        System.err.println(CACHE.stats());
         return result;
     }
 
@@ -286,14 +288,14 @@ public class ComponentAttributeMatcher {
         final AttributesSchema producerAttributeSchema;
         final AttributeContainer consumerAttributesContainer;
         final AttributeContainer attributesToConsider;
-        final Iterable<HasAttributes> candidatesToAttributes;
+        final List<HasAttributes> candidatesToAttributes;
 
         private Key(AttributesSchema consumerAttributeSchema, AttributesSchema producerAttributeSchema, Iterable<HasAttributes> candidates, AttributeContainer consumerAttributesContainer, AttributeContainer attributesToConsider) {
             this.consumerAttributeSchema = consumerAttributeSchema;
             this.producerAttributeSchema = producerAttributeSchema;
             this.consumerAttributesContainer = consumerAttributesContainer;
             this.attributesToConsider = attributesToConsider;
-            this.candidatesToAttributes = Iterables.transform(candidates, TO_ATTRIBUTES);
+            this.candidatesToAttributes = Lists.newArrayList(Iterables.transform(candidates, TO_ATTRIBUTES));
         }
 
         @Override
