@@ -114,8 +114,7 @@ public class LocalComponentDependencyMetadata implements LocalOriginDependencyMe
         AttributesSchema producerAttributeSchema = targetComponent instanceof LocalComponentMetadata ? ((LocalComponentMetadata) targetComponent).getAttributesSchema() : attributesSchema;
         if (useConfigurationAttributes) {
             Set<HasAttributes> consumableConfigurations = getConfigurationsAsHasAttributes(targetComponent);
-            ComponentAttributeMatcher matcher = new ComponentAttributeMatcher(attributesSchema, producerAttributeSchema, consumableConfigurations, fromConfigurationAttributes, null);
-            List<ConfigurationMetadata> matches = Cast.uncheckedCast(matcher.getMatchs());
+            List<ConfigurationMetadata> matches = Cast.uncheckedCast(ComponentAttributeMatcher.getMatches(attributesSchema, producerAttributeSchema, consumableConfigurations, fromConfigurationAttributes, null));
             if (matches.size() == 1) {
                 return ImmutableSet.of(ClientAttributesPreservingConfigurationMetadata.wrapIfLocal(matches.get(0), fromConfigurationAttributes));
             } else if (!matches.isEmpty()) {
@@ -147,7 +146,7 @@ public class LocalComponentDependencyMetadata implements LocalOriginDependencyMe
             if (!delegate.getAttributes().isEmpty()) {
                 // need to validate that the selected configuration still matches the consumer attributes
                 ComponentAttributeMatcher matcher = new ComponentAttributeMatcher(attributesSchema, producerAttributeSchema, Collections.singleton((HasAttributes) delegate), fromConfigurationAttributes, null);
-                if (matcher.getMatchs().isEmpty()) {
+                if (matcher.getMatches().isEmpty()) {
                     throw new NoMatchingConfigurationSelectionException(fromConfigurationAttributes, attributesSchema, targetComponent, Collections.singletonList(targetConfiguration));
                 }
             }

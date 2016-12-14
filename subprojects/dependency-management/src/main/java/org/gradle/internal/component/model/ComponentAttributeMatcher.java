@@ -15,7 +15,13 @@
  */
 package org.gradle.internal.component.model;
 
+import com.google.common.base.Function;
+import com.google.common.base.Objects;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -28,23 +34,58 @@ import org.gradle.api.attributes.AttributesSchema;
 import org.gradle.api.attributes.CompatibilityCheckDetails;
 import org.gradle.api.attributes.HasAttributes;
 import org.gradle.api.attributes.MultipleCandidatesDetails;
+import org.gradle.api.internal.attributes.AttributeContainerInternal;
 import org.gradle.api.internal.attributes.AttributeValue;
 import org.gradle.api.internal.attributes.CompatibilityRuleChainInternal;
 import org.gradle.api.internal.attributes.DisambiguationRuleChainInternal;
 import org.gradle.internal.Cast;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class ComponentAttributeMatcher {
 
+    private static final LoadingCache<Key, BitSet> CACHE = CacheBuilder.newBuilder()
+        .maximumSize(1000)
+        .build(new CacheLoader<Key, BitSet>() {
+            @Override
+            public BitSet load(Key key) throws Exception {
+                ComponentAttributeMatcher matcher = new ComponentAttributeMatcher(key.consumerAttributeSchema, key.producerAttributeSchema, key.candidatesToAttributes, key.consumerAttributesContainer, key.attributesToConsider);
+                BitSet result = new BitSet();
+                List<? extends HasAttributes> matches = matcher.getMatches();
+                int i = 0;
+                for (HasAttributes candidate : key.candidatesToAttributes) {
+                    result.set(i++, matches.contains(candidate));
+                }
+                return result;
+            }
+        });
+
     private final AttributesSchema consumerAttributeSchema;
     private final AttributesSchema producerAttributeSchema;
     private final Map<HasAttributes, MatchDetails> matchDetails = Maps.newHashMap();
     private final AttributeContainer consumerAttributesContainer;
     private final AttributeContainer attributesToConsider;
+
+
+    public static List<? extends HasAttributes> getMatches(AttributesSchema consumerAttributeSchema,
+                                                           AttributesSchema producerAttributeSchema,
+                                                           Iterable<HasAttributes> candidates, //configAttributes + artifactAttributes
+                                                           AttributeContainer consumerAttributesContainer,
+                                                           AttributeContainer attributesToConsider) {
+        BitSet cached = CACHE.getUnchecked(new Key(consumerAttributeSchema, producerAttributeSchema, candidates, consumerAttributesContainer, attributesToConsider));
+        List<HasAttributes> result = Lists.newArrayListWithCapacity(cached.size());
+        int i = 0;
+        for (HasAttributes candidate : candidates) {
+            if (cached.get(i++)) {
+                result.add(candidate);
+            }
+        }
+        return result;
+    }
 
     public ComponentAttributeMatcher(AttributesSchema consumerAttributeSchema, AttributesSchema producerAttributeSchema,
                                      Iterable<HasAttributes> candidates, //configAttributes + artifactAttributes
@@ -89,7 +130,7 @@ public class ComponentAttributeMatcher {
         return attributeValue;
     }
 
-    public List<? extends HasAttributes> getMatchs() {
+    public List<? extends HasAttributes> getMatches() {
         List<HasAttributes> matchs = new ArrayList<HasAttributes>(1);
         for (Map.Entry<HasAttributes, MatchDetails> entry : matchDetails.entrySet()) {
             MatchDetails details = entry.getValue();
@@ -231,6 +272,49 @@ public class ComponentAttributeMatcher {
             for (HasAttributes attributes : hasAttributes) {
                 best.add(attributes);
             }
+        }
+    }
+
+    private static class Key {
+        private final static Function<HasAttributes, HasAttributes> TO_ATTRIBUTES = new Function<HasAttributes, HasAttributes>() {
+            @Override
+            public AttributeContainer apply(HasAttributes input) {
+                return ((AttributeContainerInternal)input.getAttributes()).asImmutable();
+            }
+        };
+        final AttributesSchema consumerAttributeSchema;
+        final AttributesSchema producerAttributeSchema;
+        final AttributeContainer consumerAttributesContainer;
+        final AttributeContainer attributesToConsider;
+        final Iterable<HasAttributes> candidatesToAttributes;
+
+        private Key(AttributesSchema consumerAttributeSchema, AttributesSchema producerAttributeSchema, Iterable<HasAttributes> candidates, AttributeContainer consumerAttributesContainer, AttributeContainer attributesToConsider) {
+            this.consumerAttributeSchema = consumerAttributeSchema;
+            this.producerAttributeSchema = producerAttributeSchema;
+            this.consumerAttributesContainer = consumerAttributesContainer;
+            this.attributesToConsider = attributesToConsider;
+            this.candidatesToAttributes = Iterables.transform(candidates, TO_ATTRIBUTES);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Key key = (Key) o;
+            return Objects.equal(consumerAttributeSchema, key.consumerAttributeSchema) &&
+                Objects.equal(producerAttributeSchema, key.producerAttributeSchema) &&
+                Objects.equal(candidatesToAttributes, key.candidatesToAttributes) &&
+                Objects.equal(consumerAttributesContainer, key.consumerAttributesContainer) &&
+                Objects.equal(attributesToConsider, key.attributesToConsider);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(consumerAttributeSchema, producerAttributeSchema, candidatesToAttributes, consumerAttributesContainer, attributesToConsider);
         }
     }
 }

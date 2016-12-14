@@ -22,6 +22,7 @@ import org.gradle.api.attributes.HasAttributes;
 import org.gradle.internal.component.model.ComponentAttributeMatcher;
 
 import java.util.Collections;
+import java.util.List;
 
 class ArtifactAttributeMatcher {
 
@@ -32,9 +33,9 @@ class ArtifactAttributeMatcher {
     }
 
     boolean attributesMatch(HasAttributes artifact, AttributeContainer configuration, AttributeContainer attributesToConsider) {
-        ComponentAttributeMatcher matcher = new ComponentAttributeMatcher(attributesSchema, attributesSchema,
+        List<? extends HasAttributes> matches = ComponentAttributeMatcher.getMatches(attributesSchema, attributesSchema,
             Collections.singleton(artifact), configuration, attributesToConsider);
-        return !matcher.getMatchs().isEmpty();
+        return !matches.isEmpty();
     }
 
 }
