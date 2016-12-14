@@ -710,6 +710,7 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
         childMutationValidators.remove(validator);
     }
 
+
     private void validateParentMutation(MutationType type) {
         // Strategy changes in a parent configuration do not affect this configuration, or any of its children, in any way
         if (type == MutationType.STRATEGY) {

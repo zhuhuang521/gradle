@@ -19,11 +19,13 @@ package org.gradle.api.plugins;
 import com.google.common.collect.Lists;
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.Named;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.ConventionMapping;
 import org.gradle.api.internal.IConventionAware;
@@ -117,6 +119,11 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
         configureTest(project, javaConvention);
         configureBuildNeeded(project);
         configureBuildDependents(project);
+        configureSchema(project);
+    }
+
+    private void configureSchema(ProjectInternal project) {
+        project.getAttributesSchema().attribute(Usage.USAGE_ATTRIBUTE);
     }
 
     private BridgedBinaries configureSourceSetDefaults(final JavaPluginConvention pluginConvention) {
@@ -204,7 +211,7 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
     private void definePathsForSourceSet(final SourceSet sourceSet, ConventionMapping outputConventionMapping, final Project project) {
         outputConventionMapping.map("classesDir", new Callable<Object>() {
             public Object call() throws Exception {
-                String classesDirName = "classes/" +   sourceSet.getName();
+                String classesDirName = "classes/" + sourceSet.getName();
                 return new File(project.getBuildDir(), classesDirName);
             }
         });
@@ -222,25 +229,47 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
     private void defineConfigurationsForSourceSet(SourceSet sourceSet, ConfigurationContainer configurations) {
         Configuration compileConfiguration = configurations.maybeCreate(sourceSet.getCompileConfigurationName());
         compileConfiguration.setVisible(false);
-        compileConfiguration.setDescription("Dependencies for " + sourceSet + ".");
+        compileConfiguration.setDescription("Dependencies for " + sourceSet + " (deprecated, use '" + sourceSet.getImplementationConfigurationName() + " ' instead).");
+
+        Configuration implementationConfiguration = configurations.maybeCreate(sourceSet.getImplementationConfigurationName());
+        implementationConfiguration.setVisible(false);
+        implementationConfiguration.setDescription("Implementation only dependencies for " + sourceSet + ".");
+        implementationConfiguration.setCanBeConsumed(false);
+        implementationConfiguration.setCanBeResolved(false);
+        implementationConfiguration.extendsFrom(compileConfiguration);
 
         Configuration runtimeConfiguration = configurations.maybeCreate(sourceSet.getRuntimeConfigurationName());
         runtimeConfiguration.setVisible(false);
         runtimeConfiguration.extendsFrom(compileConfiguration);
-        runtimeConfiguration.setDescription("Runtime dependencies for " + sourceSet + ".");
+        runtimeConfiguration.setDescription("Runtime dependencies for " + sourceSet + " (deprecated, use '" + sourceSet.getRuntimeOnlyConfigurationName() + " ' instead).");
 
         Configuration compileOnlyConfiguration = configurations.maybeCreate(sourceSet.getCompileOnlyConfigurationName());
         compileOnlyConfiguration.setVisible(false);
-        compileOnlyConfiguration.extendsFrom(compileConfiguration);
+        compileOnlyConfiguration.extendsFrom(implementationConfiguration);
         compileOnlyConfiguration.setDescription("Compile dependencies for " + sourceSet + ".");
 
         Configuration compileClasspathConfiguration = configurations.maybeCreate(sourceSet.getCompileClasspathConfigurationName());
         compileClasspathConfiguration.setVisible(false);
         compileClasspathConfiguration.extendsFrom(compileOnlyConfiguration);
         compileClasspathConfiguration.setDescription("Compile classpath for " + sourceSet + ".");
+        compileClasspathConfiguration.setCanBeConsumed(false);
+
+        Configuration runtimeOnlyConfiguration = configurations.maybeCreate(sourceSet.getRuntimeOnlyConfigurationName());
+        runtimeOnlyConfiguration.setVisible(false);
+        runtimeOnlyConfiguration.setCanBeConsumed(false);
+        runtimeOnlyConfiguration.setCanBeResolved(false);
+        runtimeOnlyConfiguration.setDescription("Runtime only dependencies for " + sourceSet + ".");
+
+        Configuration runtimeClasspathConfiguration = configurations.maybeCreate(sourceSet.getRuntimeClasspathConfigurationName());
+        runtimeClasspathConfiguration.setVisible(false);
+        runtimeClasspathConfiguration.setCanBeConsumed(false);
+        runtimeClasspathConfiguration.setCanBeResolved(true);
+        runtimeClasspathConfiguration.setDescription("Runtime classpath of " + sourceSet + ".");
+        runtimeClasspathConfiguration.extendsFrom(runtimeOnlyConfiguration, runtimeConfiguration);
 
         sourceSet.setCompileClasspath(compileClasspathConfiguration);
-        sourceSet.setRuntimeClasspath(sourceSet.getOutput().plus(runtimeConfiguration));
+        sourceSet.setRuntimeClasspath(sourceSet.getOutput().plus(runtimeClasspathConfiguration));
+
     }
 
     public void configureForSourceSet(final SourceSet sourceSet, AbstractCompile compile) {
@@ -437,6 +466,66 @@ public class JavaBasePlugin implements Plugin<ProjectInternal> {
             for (BinarySpecInternal binary : bridgedBinaries.binaries) {
                 binaries.put(binary.getProjectScopedName(), binary);
             }
+        }
+    }
+
+    /**
+     * Represents the usage of a configuration. Typical usages include compilation or runtime.
+     * This interface allows the user to customize usages by implementing this interface, or
+     * simply calling the {@link #usage(String)} method.
+     */
+    public interface Usage extends Named {
+        Attribute<Usage> USAGE_ATTRIBUTE = Attribute.of(Usage.class);
+
+        Usage FOR_COMPILE = usage("for compile");
+        Usage FOR_RUNTIME = usage("for runtime");
+
+    }
+
+    /**
+     * Creates a simple named usage.
+     * @param usage the usage name
+     * @return a usage with the provided name
+     */
+    public static Usage usage(final String usage) {
+        return new UsageImpl(usage);
+    }
+
+    private static class UsageImpl implements Usage {
+        private final String usage;
+
+        public UsageImpl(String usage) {
+            this.usage = usage;
+        }
+
+        @Override
+        public String getName() {
+            return usage;
+        }
+
+        @Override
+        public String toString() {
+            return usage;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            UsageImpl usage1 = (UsageImpl) o;
+
+            return usage.equals(usage1.usage);
+
+        }
+
+        @Override
+        public int hashCode() {
+            return usage.hashCode();
         }
     }
 }
