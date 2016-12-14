@@ -19,6 +19,7 @@ package org.gradle.api.internal.artifacts.transform;
 import org.gradle.api.Transformer;
 import org.gradle.api.artifacts.transform.ArtifactTransform;
 import org.gradle.api.artifacts.transform.ArtifactTransformException;
+import org.gradle.api.attributes.Attribute;
 import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.internal.artifacts.configurations.ResolutionStrategyInternal;
 import org.gradle.internal.reflect.DirectInstantiator;
@@ -26,6 +27,7 @@ import org.gradle.internal.reflect.DirectInstantiator;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.List;
+import java.util.Set;
 
 class InstantiatingArtifactTransforms implements ArtifactTransforms {
     private final ResolutionStrategyInternal resolutionStrategy;
@@ -39,8 +41,10 @@ class InstantiatingArtifactTransforms implements ArtifactTransforms {
     @Override
     public Transformer<List<File>, File> getTransform(AttributeContainer from, AttributeContainer to) {
         for (ArtifactTransformRegistrations.ArtifactTransformRegistration transformReg : resolutionStrategy.getTransforms()) {
-            if (attributeMatcher.attributesMatch(from, transformReg.from, transformReg.from)
-                && attributeMatcher.attributesMatch(to, transformReg.to, transformReg.to)) {
+            Set<Attribute<?>> fromAttributes = transformReg.from.keySet();
+            Set<Attribute<?>> toAttributes = transformReg.to.keySet();
+            if (attributeMatcher.attributesMatch(from, transformReg.from, fromAttributes)
+                && attributeMatcher.attributesMatch(to, transformReg.to, toAttributes)) {
                 return createArtifactTransformer(transformReg);
             }
         }

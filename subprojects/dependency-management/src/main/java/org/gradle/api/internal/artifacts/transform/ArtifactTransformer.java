@@ -18,6 +18,7 @@ package org.gradle.api.internal.artifacts.transform;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.gradle.api.Buildable;
 import org.gradle.api.Nullable;
 import org.gradle.api.Transformer;
@@ -33,7 +34,6 @@ import org.gradle.api.internal.artifacts.attributes.DefaultArtifactAttributes;
 import org.gradle.api.internal.artifacts.configurations.ResolutionStrategyInternal;
 import org.gradle.api.internal.artifacts.ivyservice.resolveengine.artifact.ArtifactVisitor;
 import org.gradle.api.internal.attributes.AttributeContainerInternal;
-import org.gradle.api.internal.attributes.DefaultAttributeContainer;
 import org.gradle.api.tasks.TaskDependency;
 import org.gradle.internal.Pair;
 import org.gradle.internal.component.local.model.ComponentFileArtifactIdentifier;
@@ -66,7 +66,7 @@ public class ArtifactTransformer {
     }
 
     private boolean matchArtifactsAttributes(HasAttributes candidate, AttributeContainer requested) {
-        return attributeMatcher.attributesMatch(candidate, requested, candidate.getAttributes());
+        return attributeMatcher.attributesMatch(candidate, requested, candidate.getAttributes().keySet());
     }
 
     private Transformer<List<File>, File> getTransform(HasAttributes from, AttributeContainer to) {
@@ -94,11 +94,11 @@ public class ArtifactTransformer {
                 for (T variant : variants) {
 
                     // For now, compare only the attributes that are in common
-                    DefaultAttributeContainer commonAttributes = new DefaultAttributeContainer();
+                    Set<Attribute<?>> commonAttributes = Sets.newHashSet();
                     Set<Attribute<?>> keys = new HashSet<Attribute<?>>(variant.getAttributes().keySet());
                     keys.retainAll(attributes.keySet());
                     for (Attribute attribute : keys) {
-                        commonAttributes.attribute(attribute, variant.getAttributes().getAttribute(attribute));
+                        commonAttributes.add(attribute);
                     }
 
                     boolean matches = attributeMatcher.attributesMatch(variant, attributes, commonAttributes);

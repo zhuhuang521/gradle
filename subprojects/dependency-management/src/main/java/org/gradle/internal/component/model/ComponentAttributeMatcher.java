@@ -21,7 +21,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -42,6 +41,7 @@ import org.gradle.internal.Cast;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,15 +69,17 @@ public class ComponentAttributeMatcher {
     private final AttributesSchema producerAttributeSchema;
     private final Map<HasAttributes, MatchDetails> matchDetails = Maps.newHashMap();
     private final AttributeContainer consumerAttributesContainer;
-    private final AttributeContainer attributesToConsider;
-
+    private final Set<Attribute<?>> attributesToConsider;
 
     public static List<? extends HasAttributes> getMatches(AttributesSchema consumerAttributeSchema,
                                                            AttributesSchema producerAttributeSchema,
-                                                           Iterable<HasAttributes> candidates, //configAttributes + artifactAttributes
+                                                           List<HasAttributes> candidates, //configAttributes + artifactAttributes
                                                            AttributeContainer consumerAttributesContainer,
-                                                           AttributeContainer attributesToConsider) {
+                                                           Set<Attribute<?>> attributesToConsider) {
         BitSet cached = CACHE.getUnchecked(new Key(consumerAttributeSchema, producerAttributeSchema, candidates, consumerAttributesContainer, attributesToConsider));
+        if (cached.cardinality()==0) {
+            return Collections.emptyList();
+        }
         List<HasAttributes> result = Lists.newArrayListWithCapacity(cached.size());
         int i = 0;
         for (HasAttributes candidate : candidates) {
@@ -90,9 +92,9 @@ public class ComponentAttributeMatcher {
     }
 
     public ComponentAttributeMatcher(AttributesSchema consumerAttributeSchema, AttributesSchema producerAttributeSchema,
-                                     Iterable<HasAttributes> candidates, //configAttributes + artifactAttributes
+                                     List<HasAttributes> candidates, //configAttributes + artifactAttributes
                                      AttributeContainer consumerAttributesContainer,
-                                     AttributeContainer attributesToConsider) {
+                                     Set<Attribute<?>> attributesToConsider) {
         this.consumerAttributeSchema = consumerAttributeSchema;
         this.producerAttributeSchema = producerAttributeSchema;
         for (HasAttributes cand : candidates) {
@@ -112,7 +114,7 @@ public class ComponentAttributeMatcher {
             MatchDetails details = entry.getValue();
             AttributeContainer producerAttributesContainer = key.getAttributes();
             Set<Attribute<Object>> dependencyAttributes = Cast.uncheckedCast(producerAttributesContainer.keySet());
-            Set<Attribute<Object>> filter = attributesToConsider != null ? Cast.<Set<Attribute<Object>>>uncheckedCast(attributesToConsider.keySet()) : null;
+            Set<Attribute<Object>> filter = attributesToConsider != null ? Cast.<Set<Attribute<Object>>>uncheckedCast(attributesToConsider) : null;
             Set<Attribute<Object>> allAttributes = filter != null ? filter : Sets.union(requestedAttributes, dependencyAttributes);
             for (Attribute<Object> attribute : allAttributes) {
                 AttributeValue<Object> consumerValue = attributeValue(attribute, consumerAttributeSchema, consumerAttributesContainer);
@@ -287,15 +289,17 @@ public class ComponentAttributeMatcher {
         final AttributesSchema consumerAttributeSchema;
         final AttributesSchema producerAttributeSchema;
         final AttributeContainer consumerAttributesContainer;
-        final AttributeContainer attributesToConsider;
+        final Set<Attribute<?>> attributesToConsider;
         final List<HasAttributes> candidatesToAttributes;
+        final int hashCode;
 
-        private Key(AttributesSchema consumerAttributeSchema, AttributesSchema producerAttributeSchema, Iterable<HasAttributes> candidates, AttributeContainer consumerAttributesContainer, AttributeContainer attributesToConsider) {
+        private Key(AttributesSchema consumerAttributeSchema, AttributesSchema producerAttributeSchema, List<HasAttributes> candidates, AttributeContainer consumerAttributesContainer, Set<Attribute<?>> attributesToConsider) {
             this.consumerAttributeSchema = consumerAttributeSchema;
             this.producerAttributeSchema = producerAttributeSchema;
             this.consumerAttributesContainer = consumerAttributesContainer;
             this.attributesToConsider = attributesToConsider;
-            this.candidatesToAttributes = Lists.newArrayList(Iterables.transform(candidates, TO_ATTRIBUTES));
+            this.candidatesToAttributes = Lists.transform(candidates, TO_ATTRIBUTES);
+            this.hashCode = doHashCode();
         }
 
         @Override
@@ -316,6 +320,10 @@ public class ComponentAttributeMatcher {
 
         @Override
         public int hashCode() {
+            return hashCode;
+        }
+
+        private int doHashCode() {
             return Objects.hashCode(consumerAttributeSchema, producerAttributeSchema, candidatesToAttributes, consumerAttributesContainer, attributesToConsider);
         }
     }

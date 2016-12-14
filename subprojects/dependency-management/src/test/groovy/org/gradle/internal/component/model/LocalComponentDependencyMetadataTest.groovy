@@ -16,7 +16,6 @@
 
 package org.gradle.internal.component.model
 
-import org.gradle.api.GradleException
 import org.gradle.api.artifacts.ModuleVersionSelector
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.component.ComponentSelector
@@ -70,11 +69,13 @@ class LocalComponentDependencyMetadataTest extends Specification {
         def dep = new LocalComponentDependencyMetadata(Stub(ComponentSelector), Stub(ModuleVersionSelector), "from", null, "to", [] as Set, [], false, false, true)
         def fromComponent = Stub(ComponentResolveMetadata)
         def toComponent = Stub(ComponentResolveMetadata)
-        def fromConfig = Stub(ConfigurationMetadata) {
+        def fromConfig = Stub(LocalConfigurationMetadata) {
             isCanBeResolved() >> true
+            getAttributes() >> attributes([:])
         }
-        def toConfig = Stub(ConfigurationMetadata) {
+        def toConfig = Stub(LocalConfigurationMetadata) {
             isCanBeConsumed() >> true
+            getAttributes() >> attributes([:])
         }
         fromConfig.hierarchy >> ["from"]
 
@@ -545,8 +546,8 @@ class LocalComponentDependencyMetadataTest extends Specification {
         dep.selectConfigurations(fromComponent, fromConfig, toComponent, attributeSchemaWithCompatibility)*.name as Set == [expected] as Set
 
         then:
-        def e = thrown(GradleException)
-        e.message.startsWith("Unexpected error thrown when trying to match attribute values with DummyMatcher")
+        def e = thrown(Exception)
+        e.cause.message.startsWith("Unexpected error thrown when trying to match attribute values with DummyMatcher")
     }
 
     def configuration(String name, String... parents) {

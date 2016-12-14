@@ -119,7 +119,7 @@ public class DefaultAttributeContainer implements AttributeContainerInternal {
             return EMPTY;
         }
         if (parent == null) {
-            return new ImmutableAttributes(attributes);
+            return ImmutableAttributes.of(attributes);
         }
         return copy().asImmutable();
     }

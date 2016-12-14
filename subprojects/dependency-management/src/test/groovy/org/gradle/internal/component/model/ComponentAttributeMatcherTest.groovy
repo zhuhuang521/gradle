@@ -37,7 +37,7 @@ class ComponentAttributeMatcherTest extends Specification {
         requested.attribute(key, "value1")
 
         when:
-        def matcher = new ComponentAttributeMatcher(schema, schema, Collections.singleton(candidate), requested, null)
+        def matcher = new ComponentAttributeMatcher(schema, schema, Collections.singletonList(candidate), requested, null)
 
         then:
         matcher.matches == [candidate]
@@ -59,7 +59,7 @@ class ComponentAttributeMatcherTest extends Specification {
         requested.attribute(key2, "value2")
 
         when:
-        def matcher = new ComponentAttributeMatcher(schema, schema, Collections.singleton(candidate), requested, null)
+        def matcher = new ComponentAttributeMatcher(schema, schema, Collections.singletonList(candidate), requested, null)
 
         then:
         matcher.matches == [candidate]
@@ -78,7 +78,7 @@ class ComponentAttributeMatcherTest extends Specification {
         requested.attribute(key2, "value1")
 
         when:
-        def matcher = new ComponentAttributeMatcher(schema, schema, Collections.singleton(candidate), requested, null)
+        def matcher = new ComponentAttributeMatcher(schema, schema, Collections.singletonList(candidate), requested, null)
 
         then:
         matcher.matches == []
@@ -95,7 +95,7 @@ class ComponentAttributeMatcherTest extends Specification {
         requested.attribute(key, "value2")
 
         when:
-        def matcher = new ComponentAttributeMatcher(schema, schema, Collections.singleton(candidate), requested, null)
+        def matcher = new ComponentAttributeMatcher(schema, schema, Collections.singletonList(candidate), requested, null)
 
         then:
         matcher.matches == []
