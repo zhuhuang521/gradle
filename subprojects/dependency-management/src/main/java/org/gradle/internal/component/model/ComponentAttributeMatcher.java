@@ -55,7 +55,7 @@ public class ComponentAttributeMatcher {
             @Override
             public BitSet load(Key key) throws Exception {
                 ComponentAttributeMatcher matcher = new ComponentAttributeMatcher(key.consumerAttributeSchema, key.producerAttributeSchema, key.candidatesToAttributes, key.consumerAttributesContainer, key.attributesToConsider);
-                BitSet result = new BitSet();
+                BitSet result = new BitSet(key.candidatesToAttributes.size());
                 List<? extends HasAttributes> matches = matcher.getMatches();
                 int i = 0;
                 for (HasAttributes candidate : key.candidatesToAttributes) {
