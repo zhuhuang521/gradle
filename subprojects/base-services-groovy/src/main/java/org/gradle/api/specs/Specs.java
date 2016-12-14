@@ -33,6 +33,11 @@ public class Specs {
         public boolean isSatisfiedBy(Object element) {
             return true;
         }
+
+        @Override
+        public String toString() {
+            return "Specs.SATISFIES_ALL";
+        }
     };
 
     public static <T> Spec<T> satisfyAll() {
@@ -42,6 +47,11 @@ public class Specs {
     public static final Spec<Object> SATISFIES_NONE = new Spec<Object>() {
         public boolean isSatisfiedBy(Object element) {
             return false;
+        }
+
+        @Override
+        public String toString() {
+            return "Specs.SATISFIES_NONE";
         }
     };
 

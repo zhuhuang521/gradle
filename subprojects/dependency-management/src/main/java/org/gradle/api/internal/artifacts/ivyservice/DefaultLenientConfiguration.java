@@ -94,9 +94,16 @@ public class DefaultLenientConfiguration implements LenientConfiguration, Visite
 
     @Override
     public SelectedArtifactSet select(final Spec<? super Dependency> dependencySpec, final AttributeContainerInternal requestedAttributes, final Spec<? super ComponentIdentifier> componentSpec) {
-        Transformer<HasAttributes, Collection<? extends HasAttributes>> selector = artifactTransformer.variantSelector(requestedAttributes);
-        final SelectedArtifactResults artifactResults = this.artifactResults.select(componentSpec, selector);
-        final SelectedFileDependencyResults fileDependencyResults = this.fileDependencyResults.select(selector);
+        final SelectedArtifactResults artifactResults;
+        final SelectedFileDependencyResults fileDependencyResults;
+        if (componentSpec.equals(Specs.satisfyAll()) && requestedAttributes.equals(configuration.getAttributes())) {
+            artifactResults = this.selectedArtifacts;
+            fileDependencyResults = this.selectedFileDependencies;
+        } else {
+            Transformer<HasAttributes, Collection<? extends HasAttributes>> selector = artifactTransformer.variantSelector(requestedAttributes);
+            artifactResults = this.artifactResults.select(componentSpec, selector);
+            fileDependencyResults = this.fileDependencyResults.select(selector);
+        }
         return new SelectedArtifactSet() {
             @Override
             public <T extends Collection<Object>> T collectBuildDependencies(T dest) {

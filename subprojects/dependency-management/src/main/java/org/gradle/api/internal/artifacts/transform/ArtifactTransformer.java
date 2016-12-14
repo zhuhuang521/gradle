@@ -16,6 +16,7 @@
 
 package org.gradle.api.internal.artifacts.transform;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -77,41 +78,7 @@ public class ArtifactTransformer {
      * Returns a selector that selects the variant matching the supplied attributes, or which can be transformed to match. The selector may return null to mean 'none of these'
      */
     public <T extends HasAttributes> Transformer<T, Collection<? extends T>> variantSelector(final AttributeContainer attributes) {
-        if (attributes.isEmpty()) {
-            return new Transformer<T, Collection<? extends T>>() {
-                @Override
-                public T transform(Collection<? extends T> variants) {
-                    // Note: This algorithm is a placeholder only. Should deal with ambiguous matches
-                    return variants.iterator().next();
-                }
-            };
-        }
-        return new Transformer<T, Collection<? extends T>>() {
-            @Override
-            public T transform(Collection<? extends T> variants) {
-                // Note: This algorithm is a placeholder only. Should deal with ambiguous matches
-                T canTransform = null;
-                for (T variant : variants) {
-
-                    // For now, compare only the attributes that are in common
-                    Set<Attribute<?>> commonAttributes = Sets.newHashSet();
-                    Set<Attribute<?>> keys = new HashSet<Attribute<?>>(variant.getAttributes().keySet());
-                    keys.retainAll(attributes.keySet());
-                    for (Attribute attribute : keys) {
-                        commonAttributes.add(attribute);
-                    }
-
-                    boolean matches = attributeMatcher.attributesMatch(variant, attributes, commonAttributes);
-                    if (matches) {
-                        return variant;
-                    }
-                    if (getTransform(variant, attributes) != null) {
-                        canTransform = variant;
-                    }
-                }
-                return canTransform;
-            }
-        };
+        return new AttributeMatchingVariantSelector<T>(attributes);
     }
 
     /**
@@ -204,5 +171,64 @@ public class ArtifactTransformer {
                 }
             }
         };
+    }
+
+    private class AttributeMatchingVariantSelector<T extends HasAttributes> implements Transformer<T, Collection<? extends T>> {
+        private final AttributeContainer attributes;
+
+        public AttributeMatchingVariantSelector(AttributeContainer attributes) {
+            this.attributes = attributes;
+        }
+
+        @Override
+        public String toString() {
+            return "Variant selector for " + attributes;
+        }
+
+        @Override
+        public T transform(Collection<? extends T> variants) {
+            // Note: This algorithm is a placeholder only. Should deal with ambiguous matches
+            if (attributes.isEmpty()) {
+                return variants.iterator().next();
+            }
+
+            T canTransform = null;
+            for (T variant : variants) {
+
+                // For now, compare only the attributes that are in common
+                Set<Attribute<?>> commonAttributes = Sets.newHashSet();
+                Set<Attribute<?>> keys = new HashSet<Attribute<?>>(variant.getAttributes().keySet());
+                keys.retainAll(attributes.keySet());
+                for (Attribute attribute : keys) {
+                    commonAttributes.add(attribute);
+                }
+
+                boolean matches = attributeMatcher.attributesMatch(variant, attributes, commonAttributes);
+                if (matches) {
+                    return variant;
+                }
+                if (getTransform(variant, attributes) != null) {
+                    canTransform = variant;
+                }
+            }
+            return canTransform;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof AttributeMatchingVariantSelector)) {
+                return false;
+            }
+            AttributeMatchingVariantSelector<?> that = (AttributeMatchingVariantSelector<?>) o;
+            return Objects.equal(attributes, that.attributes);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(attributes);
+        }
     }
 }
