@@ -21,6 +21,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -40,7 +41,6 @@ import org.gradle.api.internal.attributes.DisambiguationRuleChainInternal;
 import org.gradle.internal.Cast;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -48,20 +48,22 @@ import java.util.Set;
 
 public class ComponentAttributeMatcher {
 
-    private static final LoadingCache<Key, BitSet> CACHE = CacheBuilder.newBuilder()
+    private final static Function<HasAttributes, HasAttributes> TO_ATTRIBUTES = new Function<HasAttributes, HasAttributes>() {
+        @Override
+        public AttributeContainer apply(HasAttributes input) {
+            return ((AttributeContainerInternal)input.getAttributes()).asImmutable();
+        }
+    };
+
+    private static final LoadingCache<Key, List<? extends HasAttributes>> CACHE = CacheBuilder.newBuilder()
         .maximumSize(1000)
-        .recordStats()
-        .build(new CacheLoader<Key, BitSet>() {
+        //.recordStats()
+        .concurrencyLevel(2)
+        .build(new CacheLoader<Key, List<? extends HasAttributes>>() {
             @Override
-            public BitSet load(Key key) throws Exception {
+            public List<? extends HasAttributes> load(Key key) throws Exception {
                 ComponentAttributeMatcher matcher = new ComponentAttributeMatcher(key.consumerAttributeSchema, key.producerAttributeSchema, key.candidatesToAttributes, key.consumerAttributesContainer, key.attributesToConsider);
-                BitSet result = new BitSet(key.candidatesToAttributes.size());
-                List<? extends HasAttributes> matches = matcher.getMatches();
-                int i = 0;
-                for (HasAttributes candidate : key.candidatesToAttributes) {
-                    result.set(i++, matches.contains(candidate));
-                }
-                return result;
+                return matcher.getMatches();
             }
         });
 
@@ -76,14 +78,17 @@ public class ComponentAttributeMatcher {
                                                            List<HasAttributes> candidates, //configAttributes + artifactAttributes
                                                            AttributeContainer consumerAttributesContainer,
                                                            Set<Attribute<?>> attributesToConsider) {
-        BitSet cached = CACHE.getUnchecked(new Key(consumerAttributeSchema, producerAttributeSchema, candidates, consumerAttributesContainer, attributesToConsider));
-        if (cached.cardinality()==0) {
+        Set<HasAttributes> query = toUniqueAttributeContainers(candidates);
+        if (query.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<? extends HasAttributes> cached = CACHE.getUnchecked(new Key(consumerAttributeSchema, producerAttributeSchema, query, consumerAttributesContainer, attributesToConsider));
+        if (cached.isEmpty()) {
             return Collections.emptyList();
         }
         List<HasAttributes> result = Lists.newArrayListWithCapacity(cached.size());
-        int i = 0;
         for (HasAttributes candidate : candidates) {
-            if (cached.get(i++)) {
+            if (cached.contains(TO_ATTRIBUTES.apply(candidate))) {
                 result.add(candidate);
             }
         }
@@ -91,8 +96,19 @@ public class ComponentAttributeMatcher {
         return result;
     }
 
+    private static ImmutableSet<HasAttributes> toUniqueAttributeContainers(List<HasAttributes> candidates) {
+        ImmutableSet.Builder<HasAttributes> query = ImmutableSet.builder();
+        for (HasAttributes candidate : candidates) {
+            AttributeContainer attributes = candidate.getAttributes();
+            if (!attributes.isEmpty()) {
+                query.add(((AttributeContainerInternal)attributes).asImmutable());
+            }
+        }
+        return query.build();
+    }
+
     public ComponentAttributeMatcher(AttributesSchema consumerAttributeSchema, AttributesSchema producerAttributeSchema,
-                                     List<HasAttributes> candidates, //configAttributes + artifactAttributes
+                                     Iterable<HasAttributes> candidates, //configAttributes + artifactAttributes
                                      AttributeContainer consumerAttributesContainer,
                                      Set<Attribute<?>> attributesToConsider) {
         this.consumerAttributeSchema = consumerAttributeSchema;
@@ -280,25 +296,19 @@ public class ComponentAttributeMatcher {
     }
 
     private static class Key {
-        private final static Function<HasAttributes, HasAttributes> TO_ATTRIBUTES = new Function<HasAttributes, HasAttributes>() {
-            @Override
-            public AttributeContainer apply(HasAttributes input) {
-                return ((AttributeContainerInternal)input.getAttributes()).asImmutable();
-            }
-        };
         final AttributesSchema consumerAttributeSchema;
         final AttributesSchema producerAttributeSchema;
         final AttributeContainer consumerAttributesContainer;
         final Set<Attribute<?>> attributesToConsider;
-        final List<HasAttributes> candidatesToAttributes;
+        final Set<HasAttributes> candidatesToAttributes;
         final int hashCode;
 
-        private Key(AttributesSchema consumerAttributeSchema, AttributesSchema producerAttributeSchema, List<HasAttributes> candidates, AttributeContainer consumerAttributesContainer, Set<Attribute<?>> attributesToConsider) {
+        private Key(AttributesSchema consumerAttributeSchema, AttributesSchema producerAttributeSchema, Set<HasAttributes> candidates, AttributeContainer consumerAttributesContainer, Set<Attribute<?>> attributesToConsider) {
             this.consumerAttributeSchema = consumerAttributeSchema;
             this.producerAttributeSchema = producerAttributeSchema;
             this.consumerAttributesContainer = consumerAttributesContainer;
             this.attributesToConsider = attributesToConsider;
-            this.candidatesToAttributes = Lists.transform(candidates, TO_ATTRIBUTES);
+            this.candidatesToAttributes = candidates;
             this.hashCode = doHashCode();
         }
 
@@ -325,6 +335,17 @@ public class ComponentAttributeMatcher {
 
         private int doHashCode() {
             return Objects.hashCode(consumerAttributeSchema, producerAttributeSchema, candidatesToAttributes, consumerAttributesContainer, attributesToConsider);
+        }
+
+        @Override
+        public String toString() {
+            return Objects.toStringHelper(this)
+                .add("consumerAttributesContainer", consumerAttributesContainer)
+                .add("candidatesToAttributes", candidatesToAttributes)
+                .add("attributesToConsider", attributesToConsider)
+                .add("consumerAttributeSchema", consumerAttributeSchema)
+                .add("producerAttributeSchema", producerAttributeSchema)
+                .toString();
         }
     }
 }
