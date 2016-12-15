@@ -153,7 +153,7 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
     private boolean dependenciesModified;
     private boolean canBeConsumed = true;
     private boolean canBeResolved = true;
-    private final DefaultAttributeContainer configurationAttributes = new DefaultAttributeContainer();
+    private AttributeContainerInternal configurationAttributes = new DefaultAttributeContainer();
 
     public DefaultConfiguration(Path identityPath, Path path, String name,
                                 ConfigurationsProvider configurationsProvider,
@@ -355,6 +355,7 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
     }
 
     public Set<File> getFiles() {
+        lockAttributes();
         return doGetFiles(Specs.<Dependency>satisfyAll(), configurationAttributes, Specs.<ComponentIdentifier>satisfyAll());
     }
 
@@ -409,6 +410,7 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
     private void resolveToStateOrLater(InternalState requestedState) {
         assertResolvingAllowed();
         synchronized (resolutionLock) {
+            lockAttributes();
             if (requestedState == GRAPH_RESOLVED || requestedState == ARTIFACTS_RESOLVED) {
                 resolveGraphIfRequired(requestedState);
             }
@@ -416,6 +418,10 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
                 resolveArtifactsIfRequired();
             }
         }
+    }
+
+    private void lockAttributes() {
+        configurationAttributes = configurationAttributes.asImmutable();
     }
 
     private void resolveGraphIfRequired(final InternalState requestedState) {
@@ -491,6 +497,7 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
 
     public TaskDependency getBuildDependencies() {
         assertResolvingAllowed();
+        lockAttributes();
         return doGetTaskDependency(Specs.<Dependency>satisfyAll(), configurationAttributes, Specs.<ComponentIdentifier>satisfyAll());
     }
 
