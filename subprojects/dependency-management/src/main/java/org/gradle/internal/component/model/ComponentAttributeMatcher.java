@@ -62,7 +62,7 @@ public class ComponentAttributeMatcher {
         .build(new CacheLoader<Key, List<? extends HasAttributes>>() {
             @Override
             public List<? extends HasAttributes> load(Key key) throws Exception {
-                ComponentAttributeMatcher matcher = new ComponentAttributeMatcher(key.consumerAttributeSchema, key.producerAttributeSchema, key.candidatesToAttributes, key.consumerAttributesContainer, key.attributesToConsider);
+                ComponentAttributeMatcher matcher = new ComponentAttributeMatcher(key.consumerAttributeSchema, key.producerAttributeSchema, key.candidatesAttributes, key.consumerAttributesContainer, key.attributesToConsider);
                 return matcher.getMatches();
             }
         });
@@ -300,7 +300,7 @@ public class ComponentAttributeMatcher {
         final AttributesSchema producerAttributeSchema;
         final AttributeContainer consumerAttributesContainer;
         final Set<Attribute<?>> attributesToConsider;
-        final Set<HasAttributes> candidatesToAttributes;
+        final Set<HasAttributes> candidatesAttributes;
         final int hashCode;
 
         private Key(AttributesSchema consumerAttributeSchema, AttributesSchema producerAttributeSchema, Set<HasAttributes> candidates, AttributeContainer consumerAttributesContainer, Set<Attribute<?>> attributesToConsider) {
@@ -308,7 +308,7 @@ public class ComponentAttributeMatcher {
             this.producerAttributeSchema = producerAttributeSchema;
             this.consumerAttributesContainer = consumerAttributesContainer;
             this.attributesToConsider = attributesToConsider;
-            this.candidatesToAttributes = candidates;
+            this.candidatesAttributes = candidates;
             this.hashCode = doHashCode();
         }
 
@@ -323,7 +323,7 @@ public class ComponentAttributeMatcher {
             Key key = (Key) o;
             return Objects.equal(consumerAttributeSchema, key.consumerAttributeSchema) &&
                 Objects.equal(producerAttributeSchema, key.producerAttributeSchema) &&
-                Objects.equal(candidatesToAttributes, key.candidatesToAttributes) &&
+                Objects.equal(candidatesAttributes, key.candidatesAttributes) &&
                 Objects.equal(consumerAttributesContainer, key.consumerAttributesContainer) &&
                 Objects.equal(attributesToConsider, key.attributesToConsider);
         }
@@ -334,14 +334,14 @@ public class ComponentAttributeMatcher {
         }
 
         private int doHashCode() {
-            return Objects.hashCode(consumerAttributeSchema, producerAttributeSchema, candidatesToAttributes, consumerAttributesContainer, attributesToConsider);
+            return Objects.hashCode(consumerAttributeSchema, producerAttributeSchema, candidatesAttributes, consumerAttributesContainer, attributesToConsider);
         }
 
         @Override
         public String toString() {
             return Objects.toStringHelper(this)
                 .add("consumerAttributesContainer", consumerAttributesContainer)
-                .add("candidatesToAttributes", candidatesToAttributes)
+                .add("candidatesToAttributes", candidatesAttributes)
                 .add("attributesToConsider", attributesToConsider)
                 .add("consumerAttributeSchema", consumerAttributeSchema)
                 .add("producerAttributeSchema", producerAttributeSchema)
