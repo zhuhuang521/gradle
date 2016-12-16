@@ -175,7 +175,8 @@ public class ArtifactTransformer {
 
     private class AttributeMatchingVariantSelector<T extends HasAttributes> implements Transformer<T, Collection<? extends T>> {
         private final AttributeContainer attributes;
-        private final Map<AttributeContainer, Boolean> previousMatches = Maps.newHashMap();
+        private final Map<AttributeContainer, Boolean> exactMatches = Maps.newHashMap();
+        private final Map<AttributeContainer, Boolean> transformMatches = Maps.newHashMap();
 
         public AttributeMatchingVariantSelector(AttributeContainer attributes) {
             this.attributes = attributes;
@@ -193,38 +194,49 @@ public class ArtifactTransformer {
                 return variants.iterator().next();
             }
 
+            // Note: This algorithm is a placeholder only. Should deal with ambiguous matches
+            T canTransform = null;
             for (T variant : variants) {
-                AttributeContainer variantAttributes = variant.getAttributes();
+                boolean matches = matchesAttributes(variant);
 
-                Boolean b = previousMatches.get(variantAttributes);
-                if (b != null) {
-                    if (b) {
-                        return variant;
-                    } else {
-                        continue;
-                    }
+                if (matches) {
+                    return variant;
                 }
+                if (canTransform(variant)) {
+                    canTransform = variant;
+                }
+            }
+            return canTransform;
+        }
 
+        private boolean matchesAttributes(T variant) {
+            AttributeContainer variantAttributes = variant.getAttributes();
+            Boolean match = exactMatches.get(variantAttributes);
+            if (match == null) {
                 // For now, compare only the attributes that are in common
                 Set<Attribute<?>> commonAttributes = Sets.newHashSet();
-                Set<Attribute<?>> keys = new HashSet<Attribute<?>>(variant.getAttributes().keySet());
-                keys.retainAll(attributes.keySet());
+                Set<Attribute<?>> keys = new HashSet<Attribute<?>>(variantAttributes.keySet());
+                keys.retainAll(this.attributes.keySet());
                 for (Attribute attribute : keys) {
                     commonAttributes.add(attribute);
                 }
 
-                boolean matches = attributeMatcher.attributesMatch(variant, attributes, commonAttributes);
-                if (matches) {
-                    previousMatches.put(variantAttributes, true);
-                    return variant;
-                }
-                if (getTransform(variant, attributes) != null) {
-                    previousMatches.put(variantAttributes, true);
-                    return variant;
-                }
-                previousMatches.put(variantAttributes, false);
+                match = attributeMatcher.attributesMatch(variant, this.attributes, commonAttributes);
+
+                exactMatches.put(variantAttributes, match);
             }
-            return null;
+            return match;
+        }
+
+        private boolean canTransform(T variant) {
+            AttributeContainer variantAttributes = variant.getAttributes();
+            Boolean match = transformMatches.get(variantAttributes);
+
+            if (match == null) {
+                match = getTransform(variant, attributes) != null;
+                transformMatches.put(variantAttributes, match);
+            }
+            return match;
         }
 
         @Override
