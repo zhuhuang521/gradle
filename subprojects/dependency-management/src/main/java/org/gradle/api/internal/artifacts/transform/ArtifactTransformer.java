@@ -56,7 +56,7 @@ public class ArtifactTransformer {
     private final Map<Pair<File, AttributeContainer>, List<File>> transformedFiles = Maps.newHashMap();
     private final Map<Pair<ResolvedArtifact, AttributeContainer>, List<ResolvedArtifact>> transformedArtifacts = Maps.newHashMap();
 
-    public ArtifactTransformer(ArtifactTransforms artifactTransforms, ArtifactAttributeMatcher attributeMatcher) {
+    ArtifactTransformer(ArtifactTransforms artifactTransforms, ArtifactAttributeMatcher attributeMatcher) {
         this.artifactTransforms = artifactTransforms;
         this.attributeMatcher = attributeMatcher;
     }
@@ -175,6 +175,7 @@ public class ArtifactTransformer {
 
     private class AttributeMatchingVariantSelector<T extends HasAttributes> implements Transformer<T, Collection<? extends T>> {
         private final AttributeContainer attributes;
+        private final Map<AttributeContainer, Boolean> previousMatches = Maps.newHashMap();
 
         public AttributeMatchingVariantSelector(AttributeContainer attributes) {
             this.attributes = attributes;
@@ -192,8 +193,17 @@ public class ArtifactTransformer {
                 return variants.iterator().next();
             }
 
-            T canTransform = null;
             for (T variant : variants) {
+                AttributeContainer variantAttributes = variant.getAttributes();
+
+                Boolean b = previousMatches.get(variantAttributes);
+                if (b != null) {
+                    if (b) {
+                        return variant;
+                    } else {
+                        continue;
+                    }
+                }
 
                 // For now, compare only the attributes that are in common
                 Set<Attribute<?>> commonAttributes = Sets.newHashSet();
@@ -205,13 +215,16 @@ public class ArtifactTransformer {
 
                 boolean matches = attributeMatcher.attributesMatch(variant, attributes, commonAttributes);
                 if (matches) {
+                    previousMatches.put(variantAttributes, true);
                     return variant;
                 }
                 if (getTransform(variant, attributes) != null) {
-                    canTransform = variant;
+                    previousMatches.put(variantAttributes, true);
+                    return variant;
                 }
+                previousMatches.put(variantAttributes, false);
             }
-            return canTransform;
+            return null;
         }
 
         @Override
