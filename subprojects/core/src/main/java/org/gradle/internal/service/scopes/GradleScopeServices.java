@@ -153,9 +153,9 @@ public class GradleScopeServices extends DefaultServiceRegistry {
         return parentRegistry.createChild(get(GradleInternal.class).getClassLoaderScope());
     }
 
-    PluginManagerInternal createPluginManager(Instantiator instantiator, GradleInternal gradleInternal, PluginRegistry pluginRegistry, DependencyInjectingInstantiator.ConstructorCache constructorCache) {
+    PluginManagerInternal createPluginManager(Instantiator instantiator, GradleInternal gradleInternal, PluginRegistry pluginRegistry, DependencyInjectingInstantiator.ConstructorCache constructorCache, BuildOperationExecutor buildOperationExecutor) {
         PluginApplicator applicator = new ImperativeOnlyPluginApplicator<Gradle>(gradleInternal);
-        return instantiator.newInstance(DefaultPluginManager.class, pluginRegistry, new DependencyInjectingInstantiator(this, constructorCache), applicator);
+        return instantiator.newInstance(DefaultPluginManager.class, pluginRegistry, new DependencyInjectingInstantiator(this, constructorCache), applicator, buildOperationExecutor);
     }
 
     FileContentCacheFactory createFileContentCacheFactory(ListenerManager listenerManager, FileContentCacheBackingStore backingStore, FileHasher fileHasher, FileSystem fileSystem) {
