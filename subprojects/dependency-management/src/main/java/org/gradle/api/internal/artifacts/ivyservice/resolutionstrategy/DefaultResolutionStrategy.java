@@ -26,6 +26,8 @@ import org.gradle.api.artifacts.ModuleVersionSelector;
 import org.gradle.api.artifacts.ResolutionStrategy;
 import org.gradle.api.artifacts.cache.ResolutionRules;
 import org.gradle.api.artifacts.transform.ArtifactTransform;
+import org.gradle.api.internal.artifacts.DefaultModuleVersionSelector;
+import org.gradle.api.internal.artifacts.dsl.ParsedModuleStringNotation;
 import org.gradle.api.internal.artifacts.transform.ArtifactTransformRegistrations;
 import org.gradle.api.internal.artifacts.ComponentSelectionRulesInternal;
 import org.gradle.api.internal.artifacts.component.ComponentIdentifierFactory;
@@ -121,8 +123,14 @@ public class DefaultResolutionStrategy implements ResolutionStrategyInternal {
 
     public DefaultResolutionStrategy force(Object... moduleVersionSelectorNotations) {
         mutationValidator.validateMutation(STRATEGY);
-        Set<ModuleVersionSelector> modules = ModuleVersionSelectorParsers.multiParser().parseNotation(moduleVersionSelectorNotations);
-        this.forcedModules.addAll(modules);
+        for (Object moduleVersionSelectorNotation : moduleVersionSelectorNotations) {
+            String selector = (String) moduleVersionSelectorNotation;
+            ParsedModuleStringNotation parsed = new ParsedModuleStringNotation(selector, null);
+            ModuleVersionSelector moduleVersionSelector = DefaultModuleVersionSelector.newSelector(parsed.getGroup(), parsed.getName(), parsed.getVersion());
+            this.forcedModules.add(moduleVersionSelector);
+        }
+//        Set<ModuleVersionSelector> modules = ModuleVersionSelectorParsers.multiParser().parseNotation(moduleVersionSelectorNotations);
+//        this.forcedModules.addAll(modules);
         return this;
     }
 
