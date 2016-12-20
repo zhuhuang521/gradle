@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,26 @@
  * limitations under the License.
  */
 
-package org.gradle.jvm.tasks.api.internal;
+package org.gradle.api.internal.tasks.compile;
 
-public abstract class AnnotationValue<V> extends Member implements Comparable<AnnotationValue<?>> {
+import org.objectweb.asm.Type;
 
-    private final V value;
+import java.lang.reflect.Modifier;
 
-    public AnnotationValue(String name, V value) {
-        super(name);
-        this.value = value;
-    }
+public class FieldMember extends TypedMember implements Comparable<FieldMember> {
 
-    public V getValue() {
-        return value;
+    public FieldMember(int access, String name, String signature, String typeDesc) {
+        super(access, name, signature, typeDesc);
     }
 
     @Override
-    public int compareTo(AnnotationValue<?> o) {
+    public int compareTo(FieldMember o) {
         return super.compare(o).result();
+    }
+
+    @Override
+    public String toString() {
+        return String.format(
+            "%s %s %s", Modifier.toString(getAccess()), Type.getType(getTypeDesc()).getClassName(), getName());
     }
 }

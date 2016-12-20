@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-package org.gradle.api.internal.component;
+package org.gradle.api.internal.tasks.compile;
 
-import org.gradle.api.component.SoftwareComponent;
+public abstract class AnnotationValue<V> extends Member implements Comparable<AnnotationValue<?>> {
 
-import java.util.Set;
+    private final V value;
 
-public interface SoftwareComponentInternal extends SoftwareComponent {
-    Set<UsageContext> getUsages();
+    public AnnotationValue(String name, V value) {
+        super(name);
+        this.value = value;
+    }
 
+    public V getValue() {
+        return value;
+    }
+
+    @Override
+    public int compareTo(AnnotationValue<?> o) {
+        return super.compare(o).result();
+    }
 }

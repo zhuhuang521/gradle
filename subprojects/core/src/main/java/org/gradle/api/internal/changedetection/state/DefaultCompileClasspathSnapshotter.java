@@ -17,18 +17,18 @@
 package org.gradle.api.internal.changedetection.state;
 
 import com.google.common.collect.Lists;
+import com.google.common.hash.HashCode;
 import org.gradle.api.internal.cache.StringInterner;
 import org.gradle.api.internal.file.FileTreeInternal;
 import org.gradle.api.internal.file.collections.DirectoryFileTree;
 import org.gradle.api.internal.file.collections.DirectoryFileTreeFactory;
-import org.gradle.api.internal.hash.FileHasher;
 import org.gradle.internal.nativeintegration.filesystem.FileSystem;
 
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class DefaultClasspathSnapshotter extends AbstractSingleHasherFileCollectionSnapshotter implements ClasspathSnapshotter {
+public class DefaultCompileClasspathSnapshotter extends AbstractFileCollectionSnapshotter implements CompileClasspathSnapshotter {
     private static final Comparator<DefaultFileDetails> FILE_DETAILS_COMPARATOR = new Comparator<DefaultFileDetails>() {
         @Override
         public int compare(DefaultFileDetails o1, DefaultFileDetails o2) {
@@ -36,13 +36,16 @@ public class DefaultClasspathSnapshotter extends AbstractSingleHasherFileCollect
         }
     };
 
-    public DefaultClasspathSnapshotter(FileHasher hasher, StringInterner stringInterner, FileSystem fileSystem, DirectoryFileTreeFactory directoryFileTreeFactory) {
-        super(hasher, stringInterner, fileSystem, directoryFileTreeFactory);
+    private final CompileClasspathSnapshotter.HasherSelector hasherSelector;
+
+    public DefaultCompileClasspathSnapshotter(CompileClasspathSnapshotter.HasherSelector selector, StringInterner stringInterner, FileSystem fileSystem, DirectoryFileTreeFactory directoryFileTreeFactory) {
+        super(stringInterner, fileSystem, directoryFileTreeFactory);
+        this.hasherSelector = selector;
     }
 
     @Override
     public Class<? extends FileCollectionSnapshotter> getRegisteredType() {
-        return ClasspathSnapshotter.class;
+        return CompileClasspathSnapshotter.class;
     }
 
     @Override
@@ -61,5 +64,15 @@ public class DefaultClasspathSnapshotter extends AbstractSingleHasherFileCollect
         super.visitDirectoryTree(directoryTree, subElements);
         Collections.sort(subElements, FILE_DETAILS_COMPARATOR);
         fileTreeElements.addAll(subElements);
+    }
+
+    @Override
+    protected HashCode doHash(DefaultFileDetails fileDetails, TaskExecution current) {
+        boolean includeResources = true;
+        Boolean incremental = (Boolean) current.getInputProperties().get("options.incremental");
+        if (incremental != null && incremental) {
+            includeResources = false;
+        }
+        return hasherSelector.selectHasher(includeResources).hash(fileDetails.details);
     }
 }

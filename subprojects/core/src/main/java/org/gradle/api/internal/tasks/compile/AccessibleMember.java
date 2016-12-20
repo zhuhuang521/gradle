@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,24 @@
  * limitations under the License.
  */
 
-package org.gradle.api.internal.component;
+package org.gradle.api.internal.tasks.compile;
 
-import org.gradle.api.Named;
-import org.gradle.api.artifacts.ModuleDependency;
-import org.gradle.api.artifacts.PublishArtifact;
+import com.google.common.collect.ComparisonChain;
 
-import java.util.Set;
+public abstract class AccessibleMember extends Member {
 
-public interface Usage extends Named {
-    Set<PublishArtifact> getArtifacts();
-    Set<ModuleDependency> getDependencies();
+    private final int access;
+
+    public AccessibleMember(int access, String name) {
+        super(name);
+        this.access = access;
+    }
+
+    public int getAccess() {
+        return access;
+    }
+
+    protected ComparisonChain compare(AccessibleMember o) {
+        return super.compare(o).compare(access, o.access);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package org.gradle.jvm.tasks.api.internal;
+package org.gradle.api.attributes;
 
-import com.google.common.collect.ComparisonChain;
+import org.gradle.api.Named;
 
-public abstract class AccessibleMember extends Member {
+/**
+ * Represents the usage of a configuration. Typical usages include compilation or runtime.
+ * This interface allows the user to customize usages by implementing this interface, or
+ * simply calling the {@link Usages#usage(String)} method.
+ */
+public interface Usage extends Named {
+    Attribute<Usage> USAGE_ATTRIBUTE = Attribute.of(Usage.class);
 
-    private final int access;
+    Usage FOR_COMPILE = Usages.usage("for compile");
+    Usage FOR_RUNTIME = Usages.usage("for runtime");
 
-    public AccessibleMember(int access, String name) {
-        super(name);
-        this.access = access;
-    }
-
-    public int getAccess() {
-        return access;
-    }
-
-    protected ComparisonChain compare(AccessibleMember o) {
-        return super.compare(o).compare(access, o.access);
-    }
 }

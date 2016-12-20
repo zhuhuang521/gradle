@@ -134,13 +134,18 @@ public class JavaCompile extends AbstractCompile {
         SingleMessageLogger.incubatingFeatureUsed("Incremental java compilation");
 
         DefaultJavaCompileSpec spec = createSpec();
-        final CacheRepository cacheRepository = getCacheRepository();
-        final GeneralCompileCaches generalCompileCaches = getGeneralCompileCaches();
+        CompileCaches compileCaches = createCompileCaches();
+        IncrementalCompilerFactory factory = new IncrementalCompilerFactory(
+            getFileOperations(), getCachingFileHasher(), getPath(), createCompiler(spec), source, compileCaches, (IncrementalTaskInputsInternal) inputs);
+        Compiler<JavaCompileSpec> compiler = factory.createCompiler();
+        performCompilation(spec, compiler);
+    }
 
-        CompileCaches compileCaches = new CompileCaches() {
-            private final CacheRepository repository = cacheRepository;
+    private CompileCaches createCompileCaches() {
+        return new CompileCaches() {
+            private final CacheRepository repository = getCacheRepository();
             private final JavaCompile javaCompile = JavaCompile.this;
-            private final GeneralCompileCaches generalCaches = generalCompileCaches;
+            private final GeneralCompileCaches generalCaches = getGeneralCompileCaches();
 
             public ClassAnalysisCache getClassAnalysisCache() {
                 return generalCaches.getClassAnalysisCache();
@@ -158,10 +163,6 @@ public class JavaCompile extends AbstractCompile {
                 return new LocalClassSetAnalysisStore(repository, javaCompile);
             }
         };
-        IncrementalCompilerFactory factory = new IncrementalCompilerFactory(
-            getFileOperations(), getCachingFileHasher(), getPath(), createCompiler(spec), source, compileCaches, (IncrementalTaskInputsInternal) inputs);
-        Compiler<JavaCompileSpec> compiler = factory.createCompiler();
-        performCompilation(spec, compiler);
     }
 
     @Inject
@@ -251,4 +252,5 @@ public class JavaCompile extends AbstractCompile {
     public CompileOptions getOptions() {
         return compileOptions;
     }
+
 }

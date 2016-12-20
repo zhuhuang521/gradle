@@ -21,6 +21,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.attributes.Usage;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.compile.JavaCompile;
 
@@ -29,6 +30,8 @@ import org.gradle.api.tasks.compile.JavaCompile;
  * the API and implementation dependencies of a library.</p>
  */
 public class JavaLibraryPlugin implements Plugin<Project> {
+
+    public static final String CLASS_DIRECTORY = "class directory";
 
     @Override
     public void apply(final Project project) {
@@ -47,6 +50,7 @@ public class JavaLibraryPlugin implements Plugin<Project> {
                 JavaCompile javaCompile = (JavaCompile) project.getTasks().findByName(sourceSet.getCompileJavaTaskName());
                 project.getArtifacts().add(sourceSet.getApiElementsConfigurationName(), ImmutableMap.of(
                     "file", javaCompile.getDestinationDir(),
+                    "type", CLASS_DIRECTORY,
                     "builtBy", javaCompile));
             }
         });
@@ -65,7 +69,7 @@ public class JavaLibraryPlugin implements Plugin<Project> {
         apiElementsConfiguration.setCanBeResolved(false);
         apiElementsConfiguration.setCanBeConsumed(true);
         apiElementsConfiguration.setTransitive(false);
-        apiElementsConfiguration.attribute(JavaBasePlugin.Usage.USAGE_ATTRIBUTE, JavaBasePlugin.Usage.FOR_COMPILE);
+        apiElementsConfiguration.attribute(Usage.USAGE_ATTRIBUTE, Usage.FOR_COMPILE);
         apiElementsConfiguration.extendsFrom(apiConfiguration);
 
         Configuration implementationConfiguration = configurations.maybeCreate(sourceSet.getImplementationConfigurationName());

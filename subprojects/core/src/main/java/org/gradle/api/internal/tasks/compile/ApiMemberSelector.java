@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.gradle.jvm.tasks.api.internal;
+package org.gradle.api.internal.tasks.compile;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
@@ -222,9 +222,6 @@ public class ApiMemberSelector extends ClassVisitor {
     }
 
     private static boolean isPackagePrivateMember(int access) {
-        return access == 0
-            || access == ACC_STATIC
-            || access == ACC_SUPER
-            || access == (ACC_SUPER | ACC_STATIC);
+        return (access & (ACC_PUBLIC | ACC_PROTECTED | ACC_PRIVATE)) == 0;
     }
 }

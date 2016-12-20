@@ -99,7 +99,7 @@ class JavaLibraryPluginTest extends AbstractProjectBuilderSpec {
         !runtimeElements.visible
         runtimeElements.canBeConsumed
         !runtimeElements.canBeResolved
-        runtimeElements.extendsFrom == [implementation] as Set
+        runtimeElements.extendsFrom == [implementation, runtimeOnly] as Set
 
         when:
         def runtimeClasspath = project.configurations.getByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME)
@@ -216,4 +216,19 @@ class JavaLibraryPluginTest extends AbstractProjectBuilderSpec {
         then:
         task.taskDependencies.getDependencies(task)*.path as Set == [':tools:compileJava', ':internal:compileJava'] as Set
     }
+
+    def "adds Java library component"() {
+        given:
+        javaLibraryPlugin.apply(project)
+
+        when:
+        def jarTask = project.tasks.getByName(JavaPlugin.JAR_TASK_NAME)
+        def javaLibrary = project.components.getByName("java")
+
+        then:
+        javaLibrary.artifacts.collect {it.archiveTask} == [jarTask]
+        javaLibrary.runtimeUsage.dependencies == project.configurations.getByName(JavaPlugin.RUNTIME_CONFIGURATION_NAME).allDependencies
+        javaLibrary.compileUsage.dependencies == project.configurations.getByName(JavaPlugin.API_CONFIGURATION_NAME).allDependencies
+    }
+
 }
