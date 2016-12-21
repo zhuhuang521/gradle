@@ -16,6 +16,7 @@
 package org.gradle.integtests.fixtures
 
 import org.gradle.api.Action
+import org.gradle.api.internal.tasks.TaskExecutionOutcome
 import org.gradle.integtests.fixtures.build.BuildTestFile
 import org.gradle.integtests.fixtures.build.BuildTestFixture
 import org.gradle.integtests.fixtures.executer.ArtifactBuilder
@@ -55,8 +56,8 @@ class AbstractIntegrationSpec extends Specification {
     GradleExecuter executer = new GradleContextualExecuter(distribution, temporaryFolder, getBuildContext())
     BuildTestFixture buildTestFixture = new BuildTestFixture(temporaryFolder)
 
-    public IntegrationTestBuildContext getBuildContext() {
-        return IntegrationTestBuildContext.INSTANCE;
+    IntegrationTestBuildContext getBuildContext() {
+        return IntegrationTestBuildContext.INSTANCE
     }
 
 
@@ -109,7 +110,7 @@ class AbstractIntegrationSpec extends Specification {
         if (path.length == 1 && path[0] instanceof TestFile) {
             return path[0] as TestFile
         }
-        getTestDirectory().file(path);
+        getTestDirectory().file(path)
     }
 
     protected GradleExecuter sample(Sample sample) {
@@ -121,7 +122,7 @@ class AbstractIntegrationSpec extends Specification {
     }
 
     protected GradleExecuter inDirectory(File directory) {
-        executer.inDirectory(directory);
+        executer.inDirectory(directory)
     }
 
     protected GradleExecuter projectDir(path) {
@@ -174,6 +175,20 @@ class AbstractIntegrationSpec extends Specification {
     protected Set<String> getSkippedTasks() {
         assertHasResult()
         result.skippedTasks
+    }
+
+    protected Set<String> getCachedTasks() {
+        assertHasResult()
+        result.tasksWithOutcome(TaskExecutionOutcome.FROM_CACHE)
+    }
+
+    protected void fromCache(String... tasks) {
+        assert getCachedTasks().containsAll(tasks)
+    }
+
+    protected void upToDate(String... tasks) {
+        assertHasResult()
+        assert result.tasksWithOutcome(TaskExecutionOutcome.UP_TO_DATE).containsAll(tasks)
     }
 
     protected List<String> getNonSkippedTasks() {
@@ -244,26 +259,26 @@ class AbstractIntegrationSpec extends Specification {
         return new GradleBackedArtifactBuilder(executer, getTestDirectory().file("artifacts"))
     }
 
-    public MavenFileRepository maven(TestFile repo) {
+    MavenFileRepository maven(TestFile repo) {
         return new MavenFileRepository(repo)
     }
 
-    public MavenFileRepository maven(Object repo) {
+    MavenFileRepository maven(Object repo) {
         return new MavenFileRepository(file(repo))
     }
 
-    public MavenLocalRepository mavenLocal(Object repo) {
+    MavenLocalRepository mavenLocal(Object repo) {
         return new MavenLocalRepository(file(repo))
     }
 
-    public MavenFileRepository getMavenRepo() {
+    MavenFileRepository getMavenRepo() {
         if (mavenRepo == null) {
             mavenRepo = new MavenFileRepository(file("maven-repo"))
         }
         return mavenRepo
     }
 
-    public MavenFileRepository publishedMavenModules(String... modulesToPublish) {
+    MavenFileRepository publishedMavenModules(String... modulesToPublish) {
         modulesToPublish.each { String notation ->
             def modules = notation.split("->").reverse()
             def current
@@ -276,22 +291,22 @@ class AbstractIntegrationSpec extends Specification {
         mavenRepo
     }
 
-    public IvyFileRepository ivy(TestFile repo) {
+    IvyFileRepository ivy(TestFile repo) {
         return new IvyFileRepository(repo)
     }
 
-    public IvyFileRepository ivy(Object repo) {
+    IvyFileRepository ivy(Object repo) {
         return new IvyFileRepository(file(repo))
     }
 
-    public IvyFileRepository getIvyRepo() {
+    IvyFileRepository getIvyRepo() {
         if (ivyRepo == null) {
             ivyRepo = new IvyFileRepository(file("ivy-repo"))
         }
         return ivyRepo
     }
 
-    public GradleExecuter using(Action<GradleExecuter> action) {
+    GradleExecuter using(Action<GradleExecuter> action) {
         action.execute(executer)
         executer
     }

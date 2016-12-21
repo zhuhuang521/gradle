@@ -15,6 +15,8 @@
  */
 package org.gradle.integtests.fixtures.executer;
 
+import org.gradle.api.internal.tasks.TaskExecutionOutcome;
+
 import java.util.List;
 import java.util.Set;
 
@@ -59,6 +61,8 @@ public interface ExecutionResult {
      * Returns the tasks that were skipped, in an undefined order. Note: ignores buildSrc tasks.
      */
     Set<String> getSkippedTasks();
+
+    Set<String> tasksWithOutcome(TaskExecutionOutcome outcome);
 
     /**
      * Asserts that exactly the given set of tasks have been skipped. Note: ignores buildSrc tasks.

@@ -15,10 +15,13 @@
  */
 package org.gradle.integtests.fixtures.executer;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Maps;
 import com.google.common.io.CharSource;
 import org.apache.commons.collections.CollectionUtils;
 import org.gradle.api.Action;
 import org.gradle.api.UncheckedIOException;
+import org.gradle.api.internal.tasks.TaskExecutionOutcome;
 import org.gradle.launcher.daemon.client.DaemonStartupMessage;
 import org.gradle.launcher.daemon.server.DaemonStateCoordinator;
 import org.gradle.util.TextUtil;
@@ -29,9 +32,11 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -46,6 +51,13 @@ public class OutputScrapingExecutionResult implements ExecutionResult {
     private final String error;
 
     private static final String TASK_LOGGER_DEBUG_PATTERN = "(?:.*\\s+\\[LIFECYCLE\\]\\s+\\[class org\\.gradle\\.TaskExecutionLogger\\]\\s+)?";
+
+    private final Map<TaskExecutionOutcome, Pattern> noWorkTaskPatterns = Maps.asMap(EnumSet.complementOf(EnumSet.of(TaskExecutionOutcome.EXECUTED)), new Function<TaskExecutionOutcome, Pattern>() {
+        @Override
+        public Pattern apply(TaskExecutionOutcome outcome) {
+            return Pattern.compile(TASK_LOGGER_DEBUG_PATTERN + "(:\\S+?(:\\S+?)*)\\s+(" + outcome.getMessage() + ")");
+        }
+    });
 
     //for example: ':a SKIPPED' or ':foo:bar:baz UP-TO-DATE' but not ':a'
     private final Pattern skippedTaskPattern = Pattern.compile(TASK_LOGGER_DEBUG_PATTERN + "(:\\S+?(:\\S+?)*)\\s+((SKIPPED)|(UP-TO-DATE)|(FROM-CACHE))");
@@ -126,6 +138,11 @@ public class OutputScrapingExecutionResult implements ExecutionResult {
 
     public Set<String> getSkippedTasks() {
         return new HashSet<String>(grepTasks(skippedTaskPattern));
+    }
+
+    @Override
+    public Set<String> tasksWithOutcome(TaskExecutionOutcome outcome) {
+        return new HashSet<String>(grepTasks(noWorkTaskPatterns.get(outcome)));
     }
 
     public ExecutionResult assertTasksSkipped(String... taskPaths) {

@@ -16,6 +16,9 @@
 
 package org.gradle.integtests.fixtures.executer;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.SetMultimap;
 import org.gradle.BuildResult;
 import org.gradle.StartParameter;
 import org.gradle.api.GradleException;
@@ -26,6 +29,8 @@ import org.gradle.api.execution.TaskExecutionListener;
 import org.gradle.api.internal.changedetection.state.InMemoryTaskArtifactCache;
 import org.gradle.api.internal.classpath.ModuleRegistry;
 import org.gradle.api.internal.file.TestFiles;
+import org.gradle.api.internal.tasks.TaskExecutionOutcome;
+import org.gradle.api.internal.tasks.TaskStateInternal;
 import org.gradle.api.logging.StandardOutputListener;
 import org.gradle.api.logging.configuration.ShowStacktrace;
 import org.gradle.api.tasks.TaskState;
@@ -127,6 +132,7 @@ public class InProcessGradleExecuter extends AbstractGradleExecuter {
             throw new UnexpectedBuildFailure(e);
         }
         return assertResult(new InProcessExecutionResult(buildListener.executedTasks, buildListener.skippedTasks,
+                buildListener.taskOutcome,
                 new OutputScrapingExecutionResult(outputListener.toString(), errorListener.toString())));
     }
 
@@ -143,7 +149,7 @@ public class InProcessGradleExecuter extends AbstractGradleExecuter {
             doRun(outputListener, errorListener, buildListener).rethrowFailure();
             throw new AssertionError("expected build to fail but it did not.");
         } catch (GradleException e) {
-            return assertResult(new InProcessExecutionFailure(buildListener.executedTasks, buildListener.skippedTasks,
+            return assertResult(new InProcessExecutionFailure(buildListener.executedTasks, buildListener.skippedTasks, buildListener.taskOutcome,
                     new OutputScrapingExecutionFailure(outputListener.toString(), errorListener.toString()), e));
         }
     }
@@ -335,10 +341,11 @@ public class InProcessGradleExecuter extends AbstractGradleExecuter {
     private static class BuildListenerImpl implements TaskExecutionGraphListener {
         private final List<String> executedTasks = new CopyOnWriteArrayList<String>();
         private final Set<String> skippedTasks = new CopyOnWriteArraySet<String>();
+        private final SetMultimap<TaskExecutionOutcome, String> taskOutcome = Multimaps.synchronizedSetMultimap(HashMultimap.<TaskExecutionOutcome, String>create());
 
         public void graphPopulated(TaskExecutionGraph graph) {
             List<Task> planned = new ArrayList<Task>(graph.getAllTasks());
-            graph.addTaskExecutionListener(new TaskListenerImpl(planned, executedTasks, skippedTasks));
+            graph.addTaskExecutionListener(new TaskListenerImpl(planned, executedTasks, skippedTasks, taskOutcome));
         }
     }
 
@@ -359,11 +366,13 @@ public class InProcessGradleExecuter extends AbstractGradleExecuter {
         private final List<Task> planned;
         private final List<String> executedTasks;
         private final Set<String> skippedTasks;
+        private final SetMultimap<TaskExecutionOutcome, String> taskOutcome;
 
-        public TaskListenerImpl(List<Task> planned, List<String> executedTasks, Set<String> skippedTasks) {
+        public TaskListenerImpl(List<Task> planned, List<String> executedTasks, Set<String> skippedTasks, SetMultimap<TaskExecutionOutcome, String> taskOutcome) {
             this.planned = planned;
             this.executedTasks = executedTasks;
             this.skippedTasks = skippedTasks;
+            this.taskOutcome = taskOutcome;
         }
 
         public void beforeExecute(Task task) {
@@ -386,6 +395,11 @@ public class InProcessGradleExecuter extends AbstractGradleExecuter {
             if (state.getSkipped()) {
                 skippedTasks.add(taskPath);
             }
+
+            TaskExecutionOutcome outcome = ((TaskStateInternal) state).getOutcome();
+            if (outcome != TaskExecutionOutcome.EXECUTED) {
+                taskOutcome.put(outcome, taskPath);
+            }
         }
 
         private String path(Task task) {
@@ -396,11 +410,13 @@ public class InProcessGradleExecuter extends AbstractGradleExecuter {
     public static class InProcessExecutionResult implements ExecutionResult {
         private final List<String> plannedTasks;
         private final Set<String> skippedTasks;
+        private final SetMultimap<TaskExecutionOutcome, String> taskOutcome;
         private final OutputScrapingExecutionResult outputResult;
 
-        public InProcessExecutionResult(List<String> plannedTasks, Set<String> skippedTasks, OutputScrapingExecutionResult outputResult) {
+        public InProcessExecutionResult(List<String> plannedTasks, Set<String> skippedTasks, SetMultimap<TaskExecutionOutcome, String> taskOutcome, OutputScrapingExecutionResult outputResult) {
             this.plannedTasks = plannedTasks;
             this.skippedTasks = skippedTasks;
+            this.taskOutcome = taskOutcome;
             this.outputResult = outputResult;
         }
 
@@ -441,6 +457,15 @@ public class InProcessGradleExecuter extends AbstractGradleExecuter {
 
         public Set<String> getSkippedTasks() {
             return new HashSet<String>(skippedTasks);
+        }
+
+        @Override
+        public Set<String> tasksWithOutcome(TaskExecutionOutcome outcome) {
+            return new HashSet<String>(taskOutcome.get(outcome));
+        }
+
+        public Set<String> getCachedTasks() {
+            return new HashSet<String>(taskOutcome.get(TaskExecutionOutcome.FROM_CACHE));
         }
 
         public ExecutionResult assertTasksSkipped(String... taskPaths) {
@@ -497,9 +522,9 @@ public class InProcessGradleExecuter extends AbstractGradleExecuter {
         private final String lineNumber;
         private final String description;
 
-        public InProcessExecutionFailure(List<String> tasks, Set<String> skippedTasks, OutputScrapingExecutionFailure outputFailure,
+        public InProcessExecutionFailure(List<String> tasks, Set<String> skippedTasks, SetMultimap<TaskExecutionOutcome, String> taskOutcome, OutputScrapingExecutionFailure outputFailure,
                                          GradleException failure) {
-            super(tasks, skippedTasks, outputFailure);
+            super(tasks, skippedTasks, taskOutcome, outputFailure);
             this.outputFailure = outputFailure;
             this.failure = failure;
 
@@ -541,7 +566,7 @@ public class InProcessGradleExecuter extends AbstractGradleExecuter {
         public ExecutionFailure assertThatCause(Matcher<String> matcher) {
             List<Throwable> causes = new ArrayList<Throwable>();
             extractCauses(failure, causes);
-            assertThat(causes, Matchers.<Throwable>hasItem(hasMessage(normalizedLineSeparators(matcher))));
+            assertThat(causes, Matchers.hasItem(hasMessage(normalizedLineSeparators(matcher))));
             outputFailure.assertThatCause(matcher);
             return this;
         }
