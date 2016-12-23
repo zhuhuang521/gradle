@@ -17,15 +17,19 @@ package org.gradle.process.internal.daemon;
 
 import org.gradle.internal.concurrent.Stoppable;
 import org.gradle.internal.operations.BuildOperationWorkerRegistry;
+import org.gradle.process.internal.health.memory.JvmMemoryStatus;
+import org.gradle.process.internal.worker.WorkerProcess;
 
 class WorkerDaemonClient implements WorkerDaemon, Stoppable {
     private final BuildOperationWorkerRegistry buildOperationWorkerRegistry;
     private final DaemonForkOptions forkOptions;
-    private final WorkerDaemonWorker workerProcess;
+    private final WorkerDaemonWorker workerDaemonWorker;
+    private final WorkerProcess workerProcess;
 
-    public WorkerDaemonClient(BuildOperationWorkerRegistry buildOperationWorkerRegistry, DaemonForkOptions forkOptions, WorkerDaemonWorker workerProcess) {
+    public WorkerDaemonClient(BuildOperationWorkerRegistry buildOperationWorkerRegistry, DaemonForkOptions forkOptions, WorkerDaemonWorker workerDaemonWorker, WorkerProcess workerProcess) {
         this.buildOperationWorkerRegistry = buildOperationWorkerRegistry;
         this.forkOptions = forkOptions;
+        this.workerDaemonWorker = workerDaemonWorker;
         this.workerProcess = workerProcess;
     }
 
@@ -35,7 +39,7 @@ class WorkerDaemonClient implements WorkerDaemon, Stoppable {
         // one problem to solve when allowing multiple threads is how to deal with memory requirements specified by compile tasks
         BuildOperationWorkerRegistry.Completion workerLease = buildOperationWorkerRegistry.getCurrent().operationStart();
         try {
-            return workerProcess.execute(action, spec);
+            return workerDaemonWorker.execute(action, spec);
         } finally {
             workerLease.operationFinish();
         }
@@ -45,8 +49,12 @@ class WorkerDaemonClient implements WorkerDaemon, Stoppable {
         return forkOptions.isCompatibleWith(required);
     }
 
+    JvmMemoryStatus getJvmMemoryStatus() {
+        return workerProcess.getJvmMemoryStatus();
+    }
+
     @Override
     public void stop() {
-        workerProcess.stop();
+        workerDaemonWorker.stop();
     }
 }

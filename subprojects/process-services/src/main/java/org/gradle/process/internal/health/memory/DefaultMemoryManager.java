@@ -29,15 +29,17 @@ public class DefaultMemoryManager implements MemoryManager, Stoppable {
     private static final Logger LOGGER = Logging.getLogger(MemoryManager.class);
     public static final int STATUS_INTERVAL_SECONDS = 5;
 
-    private final MemoryInfo memoryInfo;
+    private final OsMemoryInfo osMemoryInfo;
+    private final JvmMemoryInfo jvmMemoryInfo;
     private final ListenerManager listenerManager;
     private final StoppableScheduledExecutor scheduler;
     private final JvmMemoryStatusListener jvmBroadcast;
     private final OsMemoryStatusListener osBroadcast;
     private final boolean osMemoryStatusSupported;
 
-    public DefaultMemoryManager(MemoryInfo memoryInfo, ListenerManager listenerManager, ExecutorFactory executorFactory) {
-        this.memoryInfo = memoryInfo;
+    public DefaultMemoryManager(OsMemoryInfo osMemoryInfo, JvmMemoryInfo jvmMemoryInfo, ListenerManager listenerManager, ExecutorFactory executorFactory) {
+        this.osMemoryInfo = osMemoryInfo;
+        this.jvmMemoryInfo = jvmMemoryInfo;
         this.listenerManager = listenerManager;
         this.scheduler = executorFactory.createScheduled("Memory manager", STATUS_INTERVAL_SECONDS * 2, TimeUnit.SECONDS);
         this.jvmBroadcast = listenerManager.getBroadcaster(JvmMemoryStatusListener.class);
@@ -48,7 +50,7 @@ public class DefaultMemoryManager implements MemoryManager, Stoppable {
 
     private boolean supportsOsMemoryStatus() {
         try {
-            memoryInfo.getOsSnapshot();
+            osMemoryInfo.getOsSnapshot();
             return true;
         } catch (UnsupportedOperationException ex) {
             return false;
@@ -73,11 +75,11 @@ public class DefaultMemoryManager implements MemoryManager, Stoppable {
         public void run() {
             try {
                 if (osMemoryStatusSupported) {
-                    OsMemoryStatus os = memoryInfo.getOsSnapshot();
+                    OsMemoryStatus os = osMemoryInfo.getOsSnapshot();
                     LOGGER.debug("Emitting OS memory status event {}", os);
                     osBroadcast.onOsMemoryStatus(os);
                 }
-                JvmMemoryStatus jvm = memoryInfo.getJvmSnapshot();
+                JvmMemoryStatus jvm = jvmMemoryInfo.getJvmSnapshot();
                 LOGGER.debug("Emitting JVM memory status event {}", jvm);
                 jvmBroadcast.onJvmMemoryStatus(jvm);
             } catch (Exception ex) {
