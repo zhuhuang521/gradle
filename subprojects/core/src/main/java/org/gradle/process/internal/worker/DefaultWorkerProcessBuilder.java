@@ -60,6 +60,7 @@ public class DefaultWorkerProcessBuilder implements WorkerProcessBuilder {
     private File gradleUserHomeDir;
     private int connectTimeoutSeconds;
     private List<URL> implementationClassPath;
+    private boolean shouldPublishProcessInfo;
 
     DefaultWorkerProcessBuilder(JavaExecHandleFactory execHandleFactory, MessagingServer server, IdGenerator<?> idGenerator, ApplicationClassesInSystemClassLoaderWorkerFactory workerFactory, OutputEventListener outputEventListener) {
         this.javaCommand = execHandleFactory.newJavaExec();
@@ -148,6 +149,11 @@ public class DefaultWorkerProcessBuilder implements WorkerProcessBuilder {
     }
 
     @Override
+    public void enableProcessInfoPublishing(boolean shouldPublish) {
+        this.shouldPublishProcessInfo = shouldPublish;
+    }
+
+    @Override
     public WorkerProcess build() {
         final WorkerJvmMemoryStatus memoryStatus = new WorkerJvmMemoryStatus();
         final DefaultWorkerProcess workerProcess = new DefaultWorkerProcess(connectTimeoutSeconds, TimeUnit.SECONDS, memoryStatus);
@@ -155,9 +161,11 @@ public class DefaultWorkerProcessBuilder implements WorkerProcessBuilder {
             public void execute(ObjectConnection connection) {
                 DefaultWorkerLoggingProtocol defaultWorkerLoggingProtocol = new DefaultWorkerLoggingProtocol(outputEventListener);
                 connection.useParameterSerializers(WorkerLoggingSerializer.create());
-                connection.useParameterSerializers(WorkerProcessInfoSerializer.create());
                 connection.addIncoming(WorkerLoggingProtocol.class, defaultWorkerLoggingProtocol);
-                connection.addIncoming(WorkerProcessInfoProtocol.class, memoryStatus);
+                if (shouldPublishProcessInfo) {
+                    connection.useParameterSerializers(WorkerProcessInfoSerializer.create());
+                    connection.addIncoming(WorkerProcessInfoProtocol.class, memoryStatus);
+                }
                 workerProcess.onConnect(connection);
             }
         });
@@ -175,7 +183,7 @@ public class DefaultWorkerProcessBuilder implements WorkerProcessBuilder {
         JavaExecHandleBuilder javaCommand = getJavaCommand();
         javaCommand.setDisplayName(displayName);
 
-        workerFactory.prepareJavaCommand(id, displayName, this, implementationClassPath, localAddress, javaCommand);
+        workerFactory.prepareJavaCommand(id, displayName, this, implementationClassPath, localAddress, javaCommand, shouldPublishProcessInfo);
 
         javaCommand.args("'" + displayName + "'");
         ExecHandle execHandle = javaCommand.build();
@@ -193,7 +201,6 @@ public class DefaultWorkerProcessBuilder implements WorkerProcessBuilder {
 
         @Override
         public void sendJvmMemoryStatus(JvmMemoryStatus jvmMemoryStatus) {
-            LOGGER.warn("Received memory status from worker process: " + jvmMemoryStatus);
             this.snapshot = jvmMemoryStatus;
         }
 
