@@ -161,11 +161,9 @@ class BuildProgressCrossVersionSpec extends ToolingApiSpecification {
 
         def configureA = events.operation("Configure project :a")
         configureA.parent == configureRoot
-        configureRoot.children == [configureA]
 
         def configureB = events.operation("Configure project :b")
         configureB.parent == configureA
-        configureA.children == [configureB]
     }
 
     def "generates events for dependency resolution"() {
@@ -303,7 +301,6 @@ class BuildProgressCrossVersionSpec extends ToolingApiSpecification {
 
         def resolveCompile = events.operation("Resolve dependencies :compile")
         resolveCompile.parent == configureRoot
-        configureRoot.children == [resolveCompile]
 
         def configureA = events.operation("Configure project :a")
         configureA.parent == resolveCompile
@@ -311,7 +308,6 @@ class BuildProgressCrossVersionSpec extends ToolingApiSpecification {
 
         def resolveCompileA = events.operation("Resolve dependencies :a:compile")
         resolveCompileA.parent == configureA
-        configureA.children == [resolveCompileA]
 
         def configureB = events.operation("Configure project :b")
         configureB.parent == resolveCompileA

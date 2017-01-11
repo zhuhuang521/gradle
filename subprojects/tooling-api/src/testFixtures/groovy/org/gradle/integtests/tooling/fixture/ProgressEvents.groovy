@@ -33,7 +33,7 @@ import org.gradle.tooling.events.test.TestOperationDescriptor
 class ProgressEvents implements ProgressListener {
     private final List<ProgressEvent> events = []
     private boolean dirty
-    private final List<Operation> operations= new ArrayList<Operation>()
+    private final List<Operation> operations = new ArrayList<Operation>()
     private static final boolean IS_WINDOWS_OS = OperatingSystem.current().isWindows()
     boolean skipValidation
 
@@ -62,7 +62,7 @@ class ProgressEvents implements ProgressListener {
                     // Display name should be mostly unique
                     // Ignore this check for TestOperationDescriptors as they are currently not unique when coming from different test tasks
                     if (!skipValidation && !(descriptor instanceof TestOperationDescriptor)) {
-                        if (descriptor.displayName == 'Configure settings' || descriptor.displayName == 'Configure build' || descriptor.displayName == 'Calculate task graph' || descriptor.displayName == 'Run tasks') {
+                        if (['Configure settings', 'Configure build', 'Calculate task graph', 'Run tasks', 'Apply plugin'].find { descriptor.displayName.startsWith(it) }) {
                             // Ignore this for now
                         } else {
                             def duplicateName = operations.find({ it.descriptor.displayName == descriptor.displayName })
@@ -96,7 +96,7 @@ class ProgressEvents implements ProgressListener {
 
                     // don't check event timestamp order on Windows OS
                     // timekeeping in CI environment on Windows is currently problematic
-                    if(!IS_WINDOWS_OS) {
+                    if (!IS_WINDOWS_OS) {
                         assert startEvent.eventTime <= event.eventTime
                     }
 
@@ -202,7 +202,7 @@ class ProgressEvents implements ProgressListener {
      */
     Operation operation(String... displayNames) {
         assertHasZeroOrMoreTrees()
-        def operation = operations.find {it.descriptor.displayName in displayNames}
+        def operation = operations.find { it.descriptor.displayName in displayNames }
         if (operation == null) {
             throw new AssertionFailedError("No operation with display name '${displayNames[0]}' found in: $operations")
         }
@@ -260,12 +260,31 @@ class ProgressEvents implements ProgressListener {
             return result.failures
         }
 
+        /**
+         * Ensure this Operation has a single children operation with the given display name.
+         *
+         * @param displayName Operation display name
+         * @return the selected Operation
+         */
         Operation child(String displayName) {
-            def child = children.find { it.descriptor.displayName == displayName }
-            if (child == null) {
+            def matching = children(displayName)
+            if (matching.isEmpty()) {
                 throw new AssertionFailedError("No operation with display name '$displayName' found in children of '$descriptor.displayName': $children")
             }
-            return child
+            if (matching.size() > 1) {
+                throw new AssertionFailedError("More than one operation with display name '$displayName' found in children of '$descriptor.displayName': $children")
+            }
+            return matching.get(0);
+        }
+
+        /**
+         * Select child operations that have the given display name.
+         *
+         * @param displayName Operation display name
+         * @return the selected Operations, potentially empty
+         */
+        List<Operation> children(String displayName) {
+            return children.findAll { it.descriptor.displayName == displayName }
         }
     }
 }
