@@ -119,6 +119,16 @@ Please see <a href="#improved-feedback-when-skipping-tasks-with-no-source-input"
 
 Please see <a href="#improved-feedback-when-skipping-tasks-with-no-source-input">Improved feedback when skipping tasks with no source input</a>.
 
+### Version of Checkstyle has been upgraded
+
+By default, Gradle now uses [Checkstyle 6.19](http://checkstyle.sourceforge.net/releasenotes.html#Release_6.19). Previously, Gradle used Checkstyle 5.9.
+
+You can downgrade the version of Checkstyle with:
+
+    checkstyle {
+        toolVersion = '5.9'
+    }
+
 ## External contributions
 
 We would like to thank the following community members for making contributions to this release of Gradle.
