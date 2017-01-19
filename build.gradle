@@ -218,15 +218,21 @@ allprojects {
         maven { url 'https://repo.gradle.org/gradle/libs-milestones' }
     }
 
-    // Force clean tasks to run before any other tasks 
+    // Force clean tasks to run before any other tasks
     tasks.withType(Delete) { cleanTask ->
         tasks.all { otherTask ->
-            if (cleanTask != otherTask && 
-                !(otherTask instanceof Delete) && 
+            if (cleanTask != otherTask &&
+                !(otherTask instanceof Delete) &&
                 !(otherTask.name in [ 'killExistingDaemons', 'tasks' ])) {
                 otherTask.mustRunAfter cleanTask
             }
         }
+    }
+
+    tasks.withType(AbstractArchiveTask) {
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
+        outputs.cacheIf { false }
     }
 }
 
