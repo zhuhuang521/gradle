@@ -16,19 +16,17 @@
 
 package org.gradle.build
 
-import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.WriteProperties
 
 import java.text.SimpleDateFormat
 
 @CacheableTask
-class BuildReceipt extends DefaultTask {
+class BuildReceipt extends WriteProperties {
     public static final String BUILD_RECEIPT_FILE_NAME = 'build-receipt.properties'
 
     private static final SimpleDateFormat TIMESTAMP_FORMAT = new java.text.SimpleDateFormat('yyyyMMddHHmmssZ')
@@ -62,24 +60,33 @@ class BuildReceipt extends DefaultTask {
     @Internal
     File destinationDir
 
-    @OutputFile
-    File getReceiptFile() {
-        assert destinationDir != null
-        new File(destinationDir, BUILD_RECEIPT_FILE_NAME)
-    }
-
-    @TaskAction
-    void generate() {
-        def data = [
+    @Override
+    @Internal
+    Map<String, String> getProperties() {
+        [
             commitId: commitId ?: "HEAD",
             versionNumber: versionNumber,
             baseVersion: baseVersion,
             isSnapshot: String.valueOf(snapshot),
             buildTimestamp: getBuildTimestampAsString(),
         ]
+    }
 
+    @Override
+    File getOutputFile() {
+        getReceiptFile()
+    }
+
+    @Internal
+    File getReceiptFile() {
+        assert destinationDir != null
+        new File(destinationDir, BUILD_RECEIPT_FILE_NAME)
+    }
+
+    @Override
+    void writeProperties() throws IOException {
         destinationDir.mkdirs()
-        ReproduciblePropertiesWriter.store(data, receiptFile)
+        super.writeProperties()
     }
 
     private String getBuildTimestampAsString() {
