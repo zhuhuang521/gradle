@@ -19,6 +19,8 @@ package org.gradle.internal.logging.source;
 import org.gradle.api.Nullable;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.StandardOutputListener;
+import org.gradle.internal.logging.events.OperationIdentifier;
+import org.gradle.internal.logging.progress.DefaultProgressLoggerFactory;
 import org.gradle.internal.time.TimeProvider;
 import org.gradle.internal.io.LinePerThreadBufferingOutputStream;
 import org.gradle.internal.io.TextStream;
@@ -159,7 +161,14 @@ abstract class PrintStreamLoggingSystem implements LoggingSourceSystem {
         }
 
         public void onOutput(CharSequence output) {
-            listener.onOutput(new StyledTextOutputEvent(timeProvider.getCurrentTime(), category, output.toString()));
+            OperationIdentifier operationId = new OperationIdentifier(-7);
+            if (null != DefaultProgressLoggerFactory.instance) {
+                operationId = new OperationIdentifier(-8);
+                if (null != DefaultProgressLoggerFactory.instance.getCurrentProgressLogger()) {
+                    operationId = DefaultProgressLoggerFactory.instance.getCurrentProgressLogger().getId();
+                }
+            }
+            listener.onOutput(new StyledTextOutputEvent(timeProvider.getCurrentTime(), category, operationId, output.toString()));
         }
     }
 }
