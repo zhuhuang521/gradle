@@ -29,16 +29,15 @@ import org.gradle.api.plugins.*;
 import org.gradle.internal.Cast;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.reflect.ObjectInstantiationException;
-import org.gradle.plugin.internal.DefaultPluginId;
-import org.gradle.plugin.PluginId;
+import org.gradle.plugin.internal.PluginId;
 
 import java.util.Map;
 
 @NotThreadSafe
 public class DefaultPluginManager implements PluginManagerInternal {
 
-    public static final String CORE_PLUGIN_NAMESPACE = "org" + DefaultPluginId.SEPARATOR + "gradle";
-    public static final String CORE_PLUGIN_PREFIX = CORE_PLUGIN_NAMESPACE + DefaultPluginId.SEPARATOR;
+    public static final String CORE_PLUGIN_NAMESPACE = "org" + PluginId.SEPARATOR + "gradle";
+    public static final String CORE_PLUGIN_PREFIX = CORE_PLUGIN_NAMESPACE + PluginId.SEPARATOR;
 
     private final Instantiator instantiator;
     private final PluginApplicator applicator;
@@ -87,7 +86,7 @@ public class DefaultPluginManager implements PluginManagerInternal {
             public void run() {
                 // Take a copy because adding to an idMappings value may result in new mappings being added (i.e. ConcurrentModificationException)
                 Iterable<PluginId> pluginIds = Lists.newArrayList(idMappings.keySet());
-                for (DefaultPluginId id : pluginIds) {
+                for (PluginId id : pluginIds) {
                     if (plugin.isAlsoKnownAs(id)) {
                         idMappings.get(id).add(new PluginWithId(id, pluginClass));
                     }
@@ -106,7 +105,7 @@ public class DefaultPluginManager implements PluginManagerInternal {
     }
 
     public void apply(String pluginId) {
-        PluginImplementation<?> plugin = pluginRegistry.lookup(DefaultPluginId.unvalidated(pluginId));
+        PluginImplementation<?> plugin = pluginRegistry.lookup(PluginId.unvalidated(pluginId));
         if (plugin == null) {
             throw new UnknownPluginException("Plugin with id '" + pluginId + "' not found.");
         }
@@ -118,7 +117,7 @@ public class DefaultPluginManager implements PluginManagerInternal {
     }
 
     private void doApply(PluginImplementation<?> plugin) {
-        DefaultPluginId pluginId = plugin.getPluginId();
+        PluginId pluginId = plugin.getPluginId();
         String pluginIdStr = pluginId == null ? null : pluginId.toString();
         Class<?> pluginClass = plugin.asClass();
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
@@ -181,7 +180,7 @@ public class DefaultPluginManager implements PluginManagerInternal {
     }
 
     public DomainObjectSet<PluginWithId> pluginsForId(String id) {
-        DefaultPluginId pluginId = DefaultPluginId.unvalidated(id);
+        PluginId pluginId = PluginId.unvalidated(id);
         DomainObjectSet<PluginWithId> pluginsForId = idMappings.get(pluginId);
         if (pluginsForId == null) {
             pluginsForId = new DefaultDomainObjectSet<PluginWithId>(PluginWithId.class, Sets.<PluginWithId>newLinkedHashSet());

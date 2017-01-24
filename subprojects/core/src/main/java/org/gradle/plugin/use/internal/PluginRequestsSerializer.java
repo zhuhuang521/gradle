@@ -20,8 +20,7 @@ import com.google.common.collect.Lists;
 import org.gradle.internal.serialize.AbstractSerializer;
 import org.gradle.internal.serialize.Decoder;
 import org.gradle.internal.serialize.Encoder;
-import org.gradle.internal.serialize.Serializer;
-import org.gradle.plugin.internal.DefaultPluginId;
+import org.gradle.plugin.internal.PluginId;
 
 import java.util.List;
 
@@ -31,7 +30,7 @@ public class PluginRequestsSerializer extends AbstractSerializer<PluginRequests>
         int requestCount = decoder.readSmallInt();
         List<PluginRequest> requests = Lists.newArrayListWithCapacity(requestCount);
         for (int i = 0; i < requestCount; i++) {
-            DefaultPluginId pluginId = DefaultPluginId.unvalidated(decoder.readString());
+            PluginId pluginId = PluginId.unvalidated(decoder.readString());
             String version = decoder.readNullableString();
             boolean apply = decoder.readBoolean();
             int lineNumber = decoder.readSmallInt();
