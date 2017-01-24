@@ -30,10 +30,7 @@ import org.gradle.api.Incubating;
 public interface PluginDependencyHandler {
 
     /**
-     * Get the PluginRequest object for the requested plugin.
-     *
      * @return returns the PluginRequest for the requested plugin.
-     * @since 3.4
      */
     PluginRequest getRequestedPlugin();
 
@@ -44,7 +41,6 @@ public interface PluginDependencyHandler {
      * @param dependencyNotation resolvable by {@link org.gradle.api.artifacts.dsl.DependencyHandler#create(Object)}
      *
      * @return a plugin option, to configure options about the dependency
-     * @since 3.4
      */
     PluginModuleOptions useModule(Object dependencyNotation);
 
@@ -52,7 +48,6 @@ public interface PluginDependencyHandler {
      * Plugin was not found in this repository.
      *
      * @param reason description of what was searched.
-     * @since 3.4
      */
     void notFound(String reason);
 }

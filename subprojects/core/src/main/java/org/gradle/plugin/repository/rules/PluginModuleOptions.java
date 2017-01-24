@@ -32,14 +32,12 @@ public interface PluginModuleOptions {
      * Will isolate the plugin's classpath from other plugins that are loaded.
      *
      * @return this
-     * @since 3.4
      */
     @Incubating
     PluginModuleOptions withIsolatedClasspath();
 
     /**
      * @return the dependency notation given to {@link PluginDependencyHandler#useModule(java.lang.Object)}
-     * @since 3.4
      */
     Object getDependencyNotation();
 
@@ -49,13 +47,11 @@ public interface PluginModuleOptions {
      *
      * @param pluginName Plugin that should be applied from the dependency.
      * @return this.
-     * @since 3.4
      */
     PluginModuleOptions withPluginName(String pluginName);
 
     /**
      * @return the name of the plugin to apply.
-     * @since 3.4
      */
     String getPluginName();
 }

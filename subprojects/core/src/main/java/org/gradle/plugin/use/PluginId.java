@@ -30,7 +30,6 @@ public interface PluginId {
      * Denotes whether this plugin id is fully qualified.
      *
      * @return true when plugin name has a dot in it.
-     * @since 3.4
      */
     boolean isQualified();
 
@@ -39,7 +38,6 @@ public interface PluginId {
      *
      * @param qualification the qualifier to add.
      * @return a new PluginId when this is not qualified, otherwise this.
-     * @since 3.4
      */
     PluginId maybeQualify(String qualification);
 
@@ -47,7 +45,6 @@ public interface PluginId {
      * Plugin id namespace.
      *
      * @return the substring of the plugin if before the last dot. null when unqualified.
-     * @since 3.4
      */
     @Nullable
     String getNamespace();
@@ -57,7 +54,6 @@ public interface PluginId {
      *
      * @param namespace the namespace to check
      * @return true when the namespaces match.
-     * @since 3.4
      */
     boolean inNamespace(String namespace);
 
@@ -65,7 +61,6 @@ public interface PluginId {
      * Plugin name without any qualifier.
      *
      * @return The name of the plugin, without any qualifier.
-     * @since 3.4
      */
     String getName();
 
@@ -73,7 +68,6 @@ public interface PluginId {
      * If this is not qualified, then this, otherwise a new instance of PluginId without the qualification.
      *
      * @return unqualified PluginId
-     * @since 3.4
      */
     PluginId getUnqualified();
 
@@ -81,7 +75,6 @@ public interface PluginId {
      * The fully qualified (if applicable) plugin.
      *
      * @return Fully qualified (if applicable) plugin id as a String.
-     * @since 3.4
      */
     String asString();
 }
