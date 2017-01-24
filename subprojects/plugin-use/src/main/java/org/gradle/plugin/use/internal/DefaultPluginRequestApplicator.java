@@ -99,12 +99,17 @@ public class DefaultPluginRequestApplicator implements PluginRequestApplicator {
         if (!results.isEmpty()) {
             final RepositoryHandler repositories = scriptHandler.getRepositories();
 
+            List<ArtifactRepository> pluginArtifactRepositories = new ArrayList<ArtifactRepository>();
             pluginRepositoryRegistry.lock();
             for (PluginRepository pluginRepository : pluginRepositoryRegistry.getPluginRepositories()) {
                 if(pluginRepository instanceof BackedByArtifactRepositories) {
-                    ((BackedByArtifactRepositories) pluginRepository).createArtifactRepositories(repositories);
+                    pluginArtifactRepositories.addAll(((BackedByArtifactRepositories) pluginRepository).createArtifactRepositories(repositories));
                 }
             }
+
+            // The plugin repositories were appended as they were added, but we want them at the front.
+            repositories.removeAll(pluginArtifactRepositories);
+            repositories.addAll(0, pluginArtifactRepositories);
 
             final List<MavenArtifactRepository> mavenRepos = repositories.withType(MavenArtifactRepository.class);
             final Set<String> repoUrls = Sets.newLinkedHashSet();

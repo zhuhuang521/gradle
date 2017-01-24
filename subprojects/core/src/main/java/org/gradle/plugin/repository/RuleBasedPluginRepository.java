@@ -67,8 +67,6 @@ public interface RuleBasedPluginRepository extends PluginRepository {
      */
     void artifactRepositories(Action<? super RepositoryHandler> action);
 
-    Action<? super RepositoryHandler> getArtifactRepositories();
-
     /**
      * A callback that will be called for each plugin defined in a <code>plugins {}</code> block.
      * If the repository does not provide the plugin, it should not provide an implementation.
@@ -76,6 +74,4 @@ public interface RuleBasedPluginRepository extends PluginRepository {
      * @param resolution a callback to provide a plugin.
      */
     void pluginResolution(Action<? super PluginDependencyHandler> resolution);
-
-    Action<? super PluginDependencyHandler> getPluginResolution();
 }

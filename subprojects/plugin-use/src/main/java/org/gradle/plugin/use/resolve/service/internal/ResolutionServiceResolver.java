@@ -54,12 +54,8 @@ public class ResolutionServiceResolver {
         return new ClassPathPluginResolution(id, parentScope, classPathFactory, pluginInspector);
     }
 
-    DependencyResolutionServices getDependencyResolutionServices() {
-        return dependencyResolutionServicesFactory.create();
-    }
-
-    public static ClassPath resolvePluginDependencies(final DependencyResolutionServices resolution,
-                                                      final Object dependencyNotation, final String location) {
+    ClassPath resolvePluginDependencies(final Object dependencyNotation, final String location) {
+        DependencyResolutionServices resolution = dependencyResolutionServicesFactory.create();
         Dependency dependency = resolution.getDependencyHandler().create(dependencyNotation);
 
         ConfigurationContainerInternal configurations = (ConfigurationContainerInternal) resolution.getConfigurationContainer();
@@ -71,6 +67,10 @@ public class ResolutionServiceResolver {
         } catch (ResolveException e) {
             throw new DependencyResolutionException("Failed to resolve all plugin dependencies from " + location, e.getCause());
         }
+    }
+
+    public DependencyResolutionServices getDependencyResolutionServices() {
+        return dependencyResolutionServicesFactory.create();
     }
 
     @Contextual

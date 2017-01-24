@@ -17,8 +17,11 @@
 package org.gradle.plugin.repository.internal;
 
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
+import org.gradle.api.artifacts.repositories.ArtifactRepository;
 import org.gradle.plugin.repository.PluginRepository;
 
+import java.util.List;
+
 public interface BackedByArtifactRepositories extends PluginRepository {
-    void createArtifactRepositories(RepositoryHandler repositoryHandler);
+    List<ArtifactRepository> createArtifactRepositories(RepositoryHandler repositoryHandler);
 }
