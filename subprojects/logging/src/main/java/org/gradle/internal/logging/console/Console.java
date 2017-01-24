@@ -19,6 +19,7 @@ package org.gradle.internal.logging.console;
 public interface Console {
     TextArea getMainArea();
 
+    // TODO: Change to TextArea
     Label getStatusBar();
 
     /**

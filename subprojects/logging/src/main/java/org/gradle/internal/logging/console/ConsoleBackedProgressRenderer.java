@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 public class ConsoleBackedProgressRenderer implements OutputEventListener {
     private final OutputEventListener listener;
     private final Console console;
+    // TODO: use ProgressOperations to maintain all operations in progress
     private final ProgressOperations operations = new ProgressOperations();
     private final DefaultStatusBarFormatter statusBarFormatter;
     private final ScheduledExecutorService executor;
@@ -42,7 +43,9 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
     private final Object lock = new Object();
     private long lastUpdate;
     private final List<OutputEvent> queue = new ArrayList<OutputEvent>();
+    // TODO: Replace with Fixed size HashMap with stable ordering
     private ProgressOperation mostRecentOperation;
+    // TODO: Replace with operation status area
     private Label statusBar;
 
     public ConsoleBackedProgressRenderer(OutputEventListener listener, Console console, DefaultStatusBarFormatter statusBarFormatter, TimeProvider timeProvider) {
@@ -99,6 +102,8 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
             return;
         }
 
+        // TODO: Render Up to 4 events in progress
+        // Best if we can avoid re-writing operations that haven't changed
         ProgressOperation lastOp = mostRecentOperation;
         for (OutputEvent event : queue) {
             try {

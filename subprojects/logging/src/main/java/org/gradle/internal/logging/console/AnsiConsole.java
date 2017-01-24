@@ -27,6 +27,7 @@ public class AnsiConsole implements Console {
     private static final int CHARS_PER_TAB_STOP = 8;
     private final Appendable target;
     private final Flushable flushable;
+    // TODO: Replace label with TextArea
     private final LabelImpl statusBar;
     private final TextAreaImpl textArea;
     private final ColorMap colorMap;
@@ -93,6 +94,7 @@ public class AnsiConsole implements Console {
     }
 
     private void charactersWritten(Cursor cursor, int count) {
+        // FIXME: Take line wrapping into account if possible
         writeCursor.col += count;
         cursor.copyFrom(writeCursor);
     }
@@ -143,6 +145,9 @@ public class AnsiConsole implements Console {
         }
     }
 
+    // TODO: replace with BuildProgressTextArea
+    // Fixed to 5 lines: 1 Build Status Line (always trimmed) and 4 Operation status lines
+    // Must take into account Console dimensions in case console is very short
     private class LabelImpl implements Label {
         private final Cursor writePos;
         private String writtenText = "";
