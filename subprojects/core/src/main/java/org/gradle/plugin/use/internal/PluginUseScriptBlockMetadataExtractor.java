@@ -93,7 +93,7 @@ public class PluginUseScriptBlockMetadataExtractor {
                             if (methodName.getText().equals("id")) {
                                 if (call.isImplicitThis()) {
                                     try {
-                                        DefaultPluginId.validate(argStringValue);
+                                        PluginId.validate(argStringValue);
                                         call.setNodeMetaData(PluginDependencySpec.class, pluginRequestCollector.createSpec(call.getLineNumber()).id(argStringValue));
                                     } catch (InvalidPluginIdException e) {
                                         restrict(argumentExpression, formatErrorMessage(e.getReason()));

@@ -23,7 +23,6 @@ import org.gradle.plugin.repository.rules.PluginDependencyHandler;
 import org.gradle.plugin.repository.rules.PluginModuleOptions;
 import org.gradle.plugin.repository.rules.PluginRequest;
 import org.gradle.plugin.use.PluginId;
-import org.gradle.plugin.use.internal.DefaultPluginId;
 import org.gradle.plugin.use.internal.InternalPluginRequest;
 import org.gradle.plugin.use.internal.InvalidPluginRequestException;
 import org.gradle.plugin.use.resolve.internal.PluginResolution;
@@ -61,7 +60,7 @@ public class RulesBasedPluginResolver implements PluginResolver {
             result.found(getDescription(), resolution);
         } else {
             String name = pluginRequest.getId().getName();
-            final PluginId pluginId = DefaultPluginId.of(name);
+            final PluginId pluginId = PluginId.of(name);
             result.found(getDescription(), new PluginResolution() {
                 @Override
                 public PluginId getPluginId() {
