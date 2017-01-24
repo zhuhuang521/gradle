@@ -26,6 +26,7 @@ import org.gradle.plugin.repository.rules.PluginDependencyHandler;
  *
  * Using this repository, the implementer is responsible to decide if the plugin can be
  * satisfied by this repository. If in doubt, then nothing should be done.
+<<<<<<< HEAD
  *
  * Example usage:
  * <code>
@@ -45,6 +46,26 @@ import org.gradle.plugin.repository.rules.PluginDependencyHandler;
  * </code>
  *
  * @since 3.4
+||||||| e0b7a1c... Adding tests and fixing a bug
+ *
+ * Example usage:
+ * <code>
+ *      pluginRepositories {
+ *          rules {
+ *              description = 'Example Inc. Plugin Repo'
+ *              artifactRepositories { repo ->
+ *                  repo.maven { url 'http://repo.example.org' }
+ *              }
+ *              pluginResolution { resolution ->
+ *                  if(resolution.requestedPlugin.id.namespace == 'org.example' && resolution.requestedPlugin.id.name == 'plugin') {
+ *                      resolution.useModule('org.example.plugin:plugin:1.0')
+ *                  }
+ *              }
+ *          }
+ *      }
+ * </code>
+=======
+>>>>>>> parent of e0b7a1c... Adding tests and fixing a bug
  */
 @Incubating
 public interface RuleBasedPluginRepository extends PluginRepository {

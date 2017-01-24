@@ -27,31 +27,7 @@ import org.gradle.internal.HasInternalProtocol;
 @Incubating
 @HasInternalProtocol
 public interface PluginModuleOptions {
-
-    /**
-     * Will isolate the plugin's classpath from other plugins that are loaded.
-     *
-     * @return this
-     */
-    @Incubating
     PluginModuleOptions withIsolatedClasspath();
 
-    /**
-     * @return the dependency notation given to {@link PluginDependencyHandler#useModule(java.lang.Object)}
-     */
     Object getDependencyNotation();
-
-    /**
-     * Changes the name of the plugin that should be applied. This could be used to remove the namespace from
-     * the plugin that was requested.
-     *
-     * @param pluginName Plugin that should be applied from the dependency.
-     * @return this.
-     */
-    PluginModuleOptions withPluginName(String pluginName);
-
-    /**
-     * @return the name of the plugin to apply.
-     */
-    String getPluginName();
 }
