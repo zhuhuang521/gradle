@@ -39,9 +39,9 @@ import java.util.Set;
 
 public class ResolutionServiceResolver {
 
-    private final Factory<DependencyResolutionServices> dependencyResolutionServicesFactory;
-    private final ClassLoaderScope parentScope;
-    private final PluginInspector pluginInspector;
+    protected final Factory<DependencyResolutionServices> dependencyResolutionServicesFactory;
+    protected final ClassLoaderScope parentScope;
+    protected final PluginInspector pluginInspector;
 
     public ResolutionServiceResolver(
         ClassLoaderScope parentScope, Factory<DependencyResolutionServices> dependencyResolutionServicesFactory, PluginInspector pluginInspector
@@ -70,8 +70,8 @@ public class ResolutionServiceResolver {
         }
     }
 
-    public DependencyResolutionServices getDependencyResolutionServices() {
-        return dependencyResolutionServicesFactory.create();
+    public Factory<DependencyResolutionServices> getDependencyResolutionServicesFactory() {
+        return dependencyResolutionServicesFactory;
     }
 
     @Contextual

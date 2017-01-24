@@ -89,7 +89,7 @@ public class PluginPortalResolver implements PluginResolver {
     }
 
     private ClassPath resolvePluginDependencies(final PluginUseMetaData metadata) {
-        DependencyResolutionServices resolution = resolutionServiceResolver.getDependencyResolutionServices();
+        DependencyResolutionServices resolution = resolutionServiceResolver.dependencyResolutionServicesFactory.create();
 
         RepositoryHandler repositories = resolution.getResolveRepositoryHandler();
         final String repoUrl = metadata.implementation.get("repo");
