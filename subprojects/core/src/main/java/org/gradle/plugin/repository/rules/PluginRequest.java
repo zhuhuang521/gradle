@@ -18,7 +18,7 @@ package org.gradle.plugin.repository.rules;
 
 import org.gradle.api.Incubating;
 import org.gradle.api.Nullable;
-import org.gradle.plugin.use.PluginId;
+import org.gradle.plugin.PluginId;
 
 /**
  * Contains information about the plugin that has been requested.

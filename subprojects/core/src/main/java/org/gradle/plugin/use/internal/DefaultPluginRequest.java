@@ -17,29 +17,29 @@
 package org.gradle.plugin.use.internal;
 
 import org.gradle.groovy.scripts.ScriptSource;
-import org.gradle.plugin.use.PluginId;
+import org.gradle.plugin.internal.DefaultPluginId;
 
 public class DefaultPluginRequest implements InternalPluginRequest {
 
-    private final PluginId id;
+    private final DefaultPluginId id;
     private final String version;
     private final boolean apply;
     private final int lineNumber;
     private final String scriptDisplayName;
 
     public DefaultPluginRequest(String id, String version, boolean apply, int lineNumber, ScriptSource scriptSource) {
-        this(PluginId.of(id), version, apply, lineNumber, scriptSource);
+        this(DefaultPluginId.of(id), version, apply, lineNumber, scriptSource);
     }
 
-    public DefaultPluginRequest(PluginId id, String version, boolean apply, int lineNumber, ScriptSource scriptSource) {
+    public DefaultPluginRequest(DefaultPluginId id, String version, boolean apply, int lineNumber, ScriptSource scriptSource) {
         this(id, version, apply, lineNumber, scriptSource.getDisplayName());
     }
 
     public DefaultPluginRequest(String id, String version, boolean apply, int lineNumber, String scriptDisplayName) {
-        this(PluginId.of(id), version, apply, lineNumber, scriptDisplayName);
+        this(DefaultPluginId.of(id), version, apply, lineNumber, scriptDisplayName);
     }
 
-    public DefaultPluginRequest(PluginId id, String version, boolean apply, int lineNumber, String scriptDisplayName) {
+    public DefaultPluginRequest(DefaultPluginId id, String version, boolean apply, int lineNumber, String scriptDisplayName) {
         this.id = id;
         this.version = version;
         this.apply = apply;
@@ -47,7 +47,8 @@ public class DefaultPluginRequest implements InternalPluginRequest {
         this.scriptDisplayName = scriptDisplayName;
     }
 
-    public PluginId getId() {
+    @Override
+    public DefaultPluginId getId() {
         return id;
     }
 
