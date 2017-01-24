@@ -35,8 +35,7 @@ public interface PluginDependencyHandler {
     PluginRequest getRequestedPlugin();
 
     /**
-     * Adds a dependency to the plugin classpath. If this method is not called, then the plugin repository does
-     * not know about the plugin, and Gradle should continue looking for an implementation.
+     * Adds a dependency to the plugin classpath.
      *
      * @param dependencyNotation resolvable by {@link org.gradle.api.artifacts.dsl.DependencyHandler#create(Object)}
      *

@@ -27,15 +27,8 @@ import org.gradle.plugin.use.PluginId;
  */
 @Incubating
 public interface PluginRequest {
-
-    /**
-     * @return The ID of the plugin requested. Never null.
-     */
     PluginId getId();
 
-    /**
-     * @return If a version was specified, the version. If not null.
-     */
     @Nullable
     String getVersion();
 }

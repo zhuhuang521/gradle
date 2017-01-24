@@ -26,7 +26,6 @@ import org.gradle.plugin.repository.rules.PluginDependencyHandler;
  *
  * Using this repository, the implementer is responsible to decide if the plugin can be
  * satisfied by this repository. If in doubt, then nothing should be done.
-<<<<<<< HEAD
  *
  * Example usage:
  * <code>
@@ -46,53 +45,15 @@ import org.gradle.plugin.repository.rules.PluginDependencyHandler;
  * </code>
  *
  * @since 3.4
-||||||| e0b7a1c... Adding tests and fixing a bug
- *
- * Example usage:
- * <code>
- *      pluginRepositories {
- *          rules {
- *              description = 'Example Inc. Plugin Repo'
- *              artifactRepositories { repo ->
- *                  repo.maven { url 'http://repo.example.org' }
- *              }
- *              pluginResolution { resolution ->
- *                  if(resolution.requestedPlugin.id.namespace == 'org.example' && resolution.requestedPlugin.id.name == 'plugin') {
- *                      resolution.useModule('org.example.plugin:plugin:1.0')
- *                  }
- *              }
- *          }
- *      }
- * </code>
-=======
->>>>>>> parent of e0b7a1c... Adding tests and fixing a bug
  */
 @Incubating
 public interface RuleBasedPluginRepository extends PluginRepository {
 
-    /**
-     * @return Description of the rule based plugin repository.
-     */
     String getDescription();
 
-    /**
-     * Set the description of the rule based plugin repository.
-     * @param description the description.
-     */
     void setDescription(String description);
 
-    /**
-     * Configure a {@link RepositoryHandler} to describe where the artifact should come from.
-     *
-     * @param action to configure a {@link RepositoryHandler}.
-     */
     void artifactRepositories(Action<? super RepositoryHandler> action);
 
-    /**
-     * A callback that will be called for each plugin defined in a <code>plugins {}</code> block.
-     * If the repository does not provide the plugin, it should not provide an implementation.
-     *
-     * @param resolution a callback to provide a plugin.
-     */
     void pluginResolution(Action<? super PluginDependencyHandler> resolution);
 }

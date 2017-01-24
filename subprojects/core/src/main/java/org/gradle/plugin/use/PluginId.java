@@ -16,55 +16,79 @@
 
 package org.gradle.plugin.use;
 
-import org.gradle.api.Incubating;
-import org.gradle.api.Nullable;
+import com.google.common.base.CharMatcher;
+import org.gradle.plugin.internal.InvalidPluginIdException;
 
-/**
- * A description of a plugin.
- *
- * @since 3.4
- */
-@Incubating
-public interface PluginId {
-    /**
-     * @return true when plugin name has a dot in it.
-     */
-    boolean isQualified();
+import static com.google.common.base.CharMatcher.anyOf;
+import static com.google.common.base.CharMatcher.inRange;
 
-    /**
-     * Takes an existing plugin, and add a qualifier.
-     * @param qualification the qualifier to add.
-     * @return a new PluginId when this is not qualified, otherwise this.
-     */
-    PluginId maybeQualify(String qualification);
+public class PluginId {
 
-    /**
-     *
-     * @return the substring of the plugin if before the last dot. Null when not qualified.
-     */
-    @Nullable
-    String getNamespace();
+    public static final String ID_SEPARATOR_ON_START_OR_END = "cannot begin or end with '" + PluginId.SEPARATOR + "'";
+    public static final String DOUBLE_SEPARATOR = "cannot contain '" + PluginId.SEPARATOR + PluginId.SEPARATOR + "'";
 
-    /**
-     * Checks if this plugin is inside of a namespace.
-     *
-     * @param namespace the namespace to check
-     * @return true when the namespaces match.
-     */
-    boolean inNamespace(String namespace);
+    public static final String PLUGIN_ID_VALID_CHARS_DESCRIPTION = "ASCII alphanumeric characters, '.', '_' and '-'";
+    public static final CharMatcher INVALID_PLUGIN_ID_CHAR_MATCHER = inRange('a', 'z')
+        .or(inRange('A', 'Z'))
+        .or(inRange('0', '9'))
+        .or(anyOf(".-_"))
+        .negate();
+    public static final String SEPARATOR = ".";
 
-    /**
-     * @return The name of the plugin, without any qualifier.
-     */
-    String getName();
+    private final String value;
 
-    /**
-     * @return If this is not qualified, then this, otherwise a new instance of PluginId without the qualification
-     */
-    PluginId getUnqualified();
+    private PluginId(String value) {
+        this.value = value;
+    }
 
-    /**
-     * @return The fully qualified (if applicable) plugin.
-     */
-    String asString();
+    public static PluginId of(String value) throws InvalidPluginIdException {
+        validate(value);
+        return new PluginId(value);
+    }
+
+    public static PluginId unvalidated(String value) {
+        return new PluginId(value);
+    }
+
+    public static void validate(String value) throws InvalidPluginIdException {
+        if (value.startsWith(SEPARATOR) || value.endsWith(SEPARATOR)) {
+            throw new InvalidPluginIdException(value, ID_SEPARATOR_ON_START_OR_END);
+        } else if (value.contains(PluginId.SEPARATOR + PluginId.SEPARATOR)) {
+            throw new InvalidPluginIdException(value, DOUBLE_SEPARATOR);
+        } else {
+            int invalidCharIndex = PluginId.INVALID_PLUGIN_ID_CHAR_MATCHER.indexIn(value);
+            if (invalidCharIndex >= 0) {
+                char invalidChar = value.charAt(invalidCharIndex);
+                throw new InvalidPluginIdException(value, invalidPluginIdCharMessage(invalidChar));
+            }
+        }
+    }
+
+    public static String invalidPluginIdCharMessage(char invalidChar) {
+        return "Plugin id contains invalid char '" + invalidChar + "' (only " + PluginId.PLUGIN_ID_VALID_CHARS_DESCRIPTION + " characters are valid)";
+    }
+
+    public boolean isQualified() {
+        return value.contains(PluginId.SEPARATOR);
+    }
+
+    public PluginId maybeQualify(String qualification) {
+        return isQualified() ? this : new PluginId(qualification + PluginId.SEPARATOR + value);
+    }
+
+    public boolean inNamespace(String namespace) {
+        return false;
+    }
+
+    public String getNamespace() {
+        return null;
+    }
+
+    public String getName() {
+        return null;
+    }
+
+    public String asString() {
+        return null;
+    }
 }
