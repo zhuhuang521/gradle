@@ -27,13 +27,7 @@ import org.gradle.api.Incubating;
  * @since 3.4
  */
 @Incubating
-public interface PluginDependencyHandler {
-
-    /**
-     * @return returns the PluginRequest for the requested plugin.
-     */
-    PluginRequest getRequestedPlugin();
-
+public interface PluginDependency {
     /**
      * Adds a dependency to the plugin classpath.
      *

@@ -18,8 +18,8 @@ package org.gradle.plugin.repository;
 
 import org.gradle.api.Action;
 import org.gradle.api.Incubating;
-import org.gradle.api.artifacts.dsl.RepositoryHandler;
-import org.gradle.plugin.repository.rules.PluginDependencyHandler;
+import org.gradle.plugin.repository.rules.RuleBasedPluginResolution;
+import org.gradle.plugin.repository.rules.RuleBasedArtifactRepositories;
 
 /**
  * Used to describe a rule based plugin repository.
@@ -53,7 +53,7 @@ public interface RuleBasedPluginRepository extends PluginRepository {
 
     void setDescription(String description);
 
-    void artifactRepositories(Action<RepositoryHandler> action);
+    void artifactRepositories(Action<RuleBasedArtifactRepositories> action);
 
-    void pluginResolution(Action<PluginDependencyHandler> resolution);
+    void pluginResolution(RuleBasedPluginResolution resolution);
 }

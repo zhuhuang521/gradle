@@ -16,13 +16,12 @@
 
 package org.gradle.plugin.use.resolve.service.internal;
 
-import org.gradle.api.Action;
 import org.gradle.internal.Factories;
 import org.gradle.internal.classpath.ClassPath;
-import org.gradle.plugin.repository.rules.PluginDependencyHandler;
-import org.gradle.plugin.repository.rules.PluginModuleOptions;
-import org.gradle.plugin.repository.rules.PluginRequest;
 import org.gradle.plugin.use.PluginId;
+import org.gradle.plugin.repository.rules.PluginDependency;
+import org.gradle.plugin.repository.rules.PluginModuleOptions;
+import org.gradle.plugin.repository.rules.RuleBasedPluginResolution;
 import org.gradle.plugin.use.internal.InternalPluginRequest;
 import org.gradle.plugin.use.internal.InvalidPluginRequestException;
 import org.gradle.plugin.use.resolve.internal.PluginResolution;
@@ -32,20 +31,20 @@ import org.gradle.plugin.use.resolve.internal.PluginResolver;
 
 public class RulesBasedPluginResolver implements PluginResolver {
 
-    private final Action<PluginDependencyHandler> resolution;
+    private final RuleBasedPluginResolution ruleBasedPluginResolution;
     private final String description;
     private final ResolutionServiceResolver resolutionServiceResolver;
 
-    public RulesBasedPluginResolver(Action<PluginDependencyHandler> resolution, String description, ResolutionServiceResolver resolutionServiceResolver) {
-        this.resolution = resolution;
+    public RulesBasedPluginResolver(RuleBasedPluginResolution ruleBasedPluginResolution, String description, ResolutionServiceResolver resolutionServiceResolver) {
+        this.ruleBasedPluginResolution = ruleBasedPluginResolution;
         this.description = description;
         this.resolutionServiceResolver = resolutionServiceResolver;
     }
 
     @Override
     public void resolve(InternalPluginRequest pluginRequest, PluginResolutionResult result) throws InvalidPluginRequestException {
-        DefaultPluginDependencyHandler defaultPluginDependency = new DefaultPluginDependencyHandler(pluginRequest);
-        resolution.execute(defaultPluginDependency);
+        DefaultPluginDependency defaultPluginDependency = new DefaultPluginDependency();
+        ruleBasedPluginResolution.findPlugin(pluginRequest, defaultPluginDependency);
 
         if(null == defaultPluginDependency.options) {
             result.notFound(getDescription(), null);
@@ -78,19 +77,9 @@ public class RulesBasedPluginResolver implements PluginResolver {
         return description;
     }
 
-    private class DefaultPluginDependencyHandler implements PluginDependencyHandler {
+    private class DefaultPluginDependency implements PluginDependency {
 
         private DefaultPluginModuleOptions options;
-        private final PluginRequest pluginRequest;
-
-        private DefaultPluginDependencyHandler(PluginRequest pluginRequest) {
-            this.pluginRequest = pluginRequest;
-        }
-
-        @Override
-        public PluginRequest getRequestedPlugin() {
-            return pluginRequest;
-        }
 
         @Override
         public PluginModuleOptions useModule(Object dependencyNotation) {
