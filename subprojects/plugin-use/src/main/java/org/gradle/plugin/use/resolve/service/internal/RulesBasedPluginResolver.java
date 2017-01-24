@@ -85,7 +85,7 @@ public class RulesBasedPluginResolver implements PluginResolver {
 
         private DefaultPluginModuleOptions options;
         private final PluginRequest pluginRequest;
-        private String failureReason;
+        private String failureReason = null;
 
         private DefaultPluginDependencyHandler(PluginRequest pluginRequest) {
             this.pluginRequest = pluginRequest;
@@ -111,7 +111,7 @@ public class RulesBasedPluginResolver implements PluginResolver {
     private static class DefaultPluginModuleOptions implements PluginModuleOptions {
 
         private final Object dependencyNotation;
-        private boolean isolatedClasspath;
+        private boolean isolatedClasspath = false;
         private String pluginName;
 
         private DefaultPluginModuleOptions(Object dependencyNotation, String pluginName) {

@@ -16,10 +16,7 @@
 
 package org.gradle.plugin.use.internal;
 
-import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -28,6 +25,7 @@ import org.gradle.api.internal.DocumentationRegistry;
 import org.gradle.groovy.scripts.ScriptSource;
 import org.gradle.groovy.scripts.internal.RestrictiveCodeVisitor;
 import org.gradle.groovy.scripts.internal.ScriptBlock;
+import org.gradle.plugin.use.PluginId;
 import org.gradle.plugin.internal.InvalidPluginIdException;
 import org.gradle.plugin.use.PluginDependencySpec;
 
