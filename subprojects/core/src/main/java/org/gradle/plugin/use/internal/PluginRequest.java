@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package org.gradle.plugin.repository.rules;
+package org.gradle.plugin.use.internal;
 
-import org.gradle.api.Action;
-import org.gradle.api.artifacts.repositories.IvyArtifactRepository;
-import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
+import org.gradle.api.Nullable;
+import org.gradle.plugin.internal.DefaultPluginId;
 
-public interface RuleBasedArtifactRepositories {
+public interface PluginRequest {
 
-    MavenArtifactRepository maven(Action<? super MavenArtifactRepository> action);
+    DefaultPluginId getId();
 
-    IvyArtifactRepository ivy(Action<? super IvyArtifactRepository> action);
+    @Nullable
+    String getVersion();
+
+    boolean isApply();
+
+    int getLineNumber();
+
+    String getScriptDisplayName();
+
+    String getDisplayName();
 }

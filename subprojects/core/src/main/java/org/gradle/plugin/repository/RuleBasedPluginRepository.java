@@ -16,10 +16,14 @@
 
 package org.gradle.plugin.repository;
 
+import groovy.lang.Closure;
 import org.gradle.api.Action;
 import org.gradle.api.Incubating;
-import org.gradle.plugin.repository.rules.RuleBasedPluginResolution;
-import org.gradle.plugin.repository.rules.RuleBasedArtifactRepositories;
+import org.gradle.api.Nullable;
+import org.gradle.api.artifacts.repositories.IvyArtifactRepository;
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
+import org.gradle.internal.HasInternalProtocol;
+import org.gradle.plugin.PluginId;
 
 /**
  * Used to describe a rule based plugin repository.
@@ -55,5 +59,56 @@ public interface RuleBasedPluginRepository extends PluginRepository {
 
     void artifactRepositories(Action<RuleBasedArtifactRepositories> action);
 
-    void pluginResolution(RuleBasedPluginResolution resolution);
+    void artifactRepositories(Closure action);
+
+    void pluginResolution(RubeBasedPluginResolution resolution);
+
+    void pluginResolution(Closure resolution);
+
+    interface RubeBasedPluginResolution {
+        void findPlugin(PluginRequest plugin, PluginDependency target);
+    }
+
+    interface PluginDependency {
+
+        /**
+         * Adds a dependency to the plugin classpath.
+         *
+         * @param dependencyNotation resolvable by {@link org.gradle.api.artifacts.dsl.DependencyHandler#create(Object)}
+         *
+         * @return a plugin option, to configure options about the dependency
+         */
+        PluginModuleOptions useModule(Object dependencyNotation);
+
+        /**
+         * Adds a dependency to the plugin classpath.
+         *
+         * @param dependencyNotation resolvable by {@link org.gradle.api.artifacts.dsl.DependencyHandler#create(Object,Closure)}
+         * @param configureClosure The closure to use to configure the dependency.
+         *
+         * @return a plugin option, to configure options about the dependency
+         */
+        PluginModuleOptions useModule(Object dependencyNotation, Closure configureClosure);
+    }
+
+    @HasInternalProtocol
+    interface PluginModuleOptions {
+        PluginModuleOptions withIsolatedClasspath();
+
+        Object getDependenyNotation();
+    }
+
+    interface PluginRequest {
+        PluginId getId();
+
+        @Nullable
+        String getVersion();
+    }
+
+    interface RuleBasedArtifactRepositories {
+
+        MavenArtifactRepository maven(Action<? super MavenArtifactRepository> action);
+
+        IvyArtifactRepository ivy(Action<? super IvyArtifactRepository> action);
+    }
 }

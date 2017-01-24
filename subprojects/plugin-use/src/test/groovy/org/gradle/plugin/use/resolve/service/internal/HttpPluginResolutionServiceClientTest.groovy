@@ -22,7 +22,7 @@ import org.gradle.internal.resource.transport.http.HttpResourceAccessor
 import org.gradle.internal.resource.transport.http.HttpResponseResource
 import org.gradle.internal.resource.transport.http.SslContextFactory
 import org.gradle.plugin.internal.DefaultPluginId
-import org.gradle.plugin.use.internal.InternalPluginRequest
+import org.gradle.plugin.use.internal.PluginRequest
 import org.gradle.util.GradleVersion
 import spock.lang.Specification
 
@@ -31,7 +31,7 @@ class HttpPluginResolutionServiceClientTest extends Specification {
     private resourceAccessor = Mock(HttpResourceAccessor)
     private sslContextFactory = Mock(SslContextFactory)
     private client = new HttpPluginResolutionServiceClient(sslContextFactory, resourceAccessor)
-    private request = Stub(InternalPluginRequest) {
+    private request = Stub(PluginRequest) {
         getId() >> DefaultPluginId.of("foo")
     }
 
@@ -111,7 +111,7 @@ class HttpPluginResolutionServiceClientTest extends Specification {
 
     def "id and version are properly encoded"() {
         given:
-        def customRequest = Stub(InternalPluginRequest) {
+        def customRequest = Stub(PluginRequest) {
             getId() >> new DefaultPluginId("foo/bar")
             getVersion() >> "1/0"
         }
