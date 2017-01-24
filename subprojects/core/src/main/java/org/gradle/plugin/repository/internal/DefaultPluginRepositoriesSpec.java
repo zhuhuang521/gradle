@@ -60,8 +60,8 @@ public class DefaultPluginRepositoriesSpec implements PluginRepositoriesSpec {
     }
 
     @Override
-    public RuleBasedPluginRepository rules(Action<? super RuleBasedPluginRepository> action) {
-        RuleBasedPluginRepository ruleBasedPluginRepository = pluginRepositoryFactory.rules(action);
+    public RuleBasedPluginRepository ruleBased(Action<? super RuleBasedPluginRepository> action) {
+        RuleBasedPluginRepository ruleBasedPluginRepository = pluginRepositoryFactory.rulesBasedPluginRepository(action);
         pluginRepositoryRegistry.add(ruleBasedPluginRepository);
         return ruleBasedPluginRepository;
     }

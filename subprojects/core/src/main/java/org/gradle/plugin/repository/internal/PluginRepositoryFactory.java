@@ -53,5 +53,5 @@ public interface PluginRepositoryFactory {
      * Adds the Rules Based Plugin for plugin resolution.
      * @return The added repository.
      */
-    RuleBasedPluginRepository rules(Action<? super RuleBasedPluginRepository> action);
+    RuleBasedPluginRepository rulesBasedPluginRepository(Action<? super RuleBasedPluginRepository> action);
 }

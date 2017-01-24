@@ -50,12 +50,5 @@ public interface PluginRepositoriesSpec {
      */
     GradlePluginPortal gradlePluginPortal();
 
-    /**
-     * Adds and configures a {@link RuleBasedPluginRepository}
-     *
-     * @param action The action to use to configure the repository.
-     * @return The added repository.
-     */
-    @Incubating
-    RuleBasedPluginRepository rules(Action<? super RuleBasedPluginRepository> action);
+    RuleBasedPluginRepository ruleBased(Action<? super RuleBasedPluginRepository> action);
 }
