@@ -106,7 +106,7 @@ public class AnsiConsole implements Console {
         } else {
             writeCursor.row = 0;
             textCursor.row++;
-            statusAreaCursor.row++;
+            statusArea.moveDown();
         }
         cursor.copyFrom(writeCursor);
     }
@@ -157,11 +157,27 @@ public class AnsiConsole implements Console {
 
         public StatusAreaImpl(Cursor writePos) {
             entries[0] = new LabelImpl(writePos);
+
         }
 
         @Override
         public Label[] getEntries() {
             return entries;
+        }
+
+        public boolean isInside(Cursor cursor) {
+            for (LabelImpl label : entries) {
+                if (cursor.row == label.writePos.row && label.writePos.col > cursor.col) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void moveDown() {
+            for (LabelImpl label : entries) {
+                label.writePos.row++;
+            }
         }
 
         public void redraw() {
@@ -272,7 +288,7 @@ public class AnsiConsole implements Console {
         protected void doEndLine(CharSequence endOfLine) {
             Ansi ansi = createAnsi();
             positionCursorAt(writePos, ansi);
-            if (writePos.row == statusAreaCursor.row && statusAreaCursor.col > writePos.col) {
+            if (statusArea.isInside(writePos)) {
                 ansi.eraseLine(Ansi.Erase.FORWARD);
             }
             ansi.newline();
