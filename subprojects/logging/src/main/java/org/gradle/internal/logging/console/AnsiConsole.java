@@ -19,6 +19,7 @@ package org.gradle.internal.logging.console;
 import org.fusesource.jansi.Ansi;
 import org.gradle.api.UncheckedIOException;
 import org.gradle.internal.logging.text.AbstractLineChoppingStyledTextOutput;
+import org.gradle.internal.logging.text.AbstractStyledTextOutput;
 
 import java.io.Flushable;
 import java.io.IOException;
@@ -27,14 +28,13 @@ public class AnsiConsole implements Console {
     private static final int CHARS_PER_TAB_STOP = 8;
     private final Appendable target;
     private final Flushable flushable;
-    // TODO: Replace label with TextArea
-    private final LabelImpl statusBar;
+    private final StatusAreaImpl statusArea;
     private final TextAreaImpl textArea;
     private final ColorMap colorMap;
     private final boolean forceAnsi;
     private final Cursor writeCursor = new Cursor();
     private final Cursor textCursor = new Cursor();
-    private final Cursor statusBarCursor = new Cursor();
+    private final Cursor statusAreaCursor = new Cursor();
 
     public AnsiConsole(Appendable target, Flushable flushable, ColorMap colorMap) {
         this(target, flushable, colorMap, false);
@@ -45,13 +45,13 @@ public class AnsiConsole implements Console {
         this.flushable = flushable;
         this.colorMap = colorMap;
         textArea = new TextAreaImpl(textCursor);
-        statusBar = new LabelImpl(statusBarCursor);
+        statusArea = new StatusAreaImpl(statusAreaCursor);
         this.forceAnsi = forceAnsi;
     }
 
     @Override
     public void flush() {
-        statusBar.redraw();
+        statusArea.redraw();
         try {
             flushable.flush();
         } catch (IOException e) {
@@ -106,7 +106,7 @@ public class AnsiConsole implements Console {
         } else {
             writeCursor.row = 0;
             textCursor.row++;
-            statusBarCursor.row++;
+            statusAreaCursor.row++;
         }
         cursor.copyFrom(writeCursor);
     }
@@ -119,10 +119,17 @@ public class AnsiConsole implements Console {
         }
     }
 
+    @Override
     public Label getStatusBar() {
-        return statusBar;
+        return statusArea.getEntries()[0];
     }
 
+    @Override
+    public BuildProgressArea getBuildProgressArea() {
+        return statusArea;
+    }
+
+    @Override
     public TextArea getMainArea() {
         return textArea;
     }
@@ -142,6 +149,25 @@ public class AnsiConsole implements Console {
         public void bottomLeft() {
             col = 0;
             row = 0;
+        }
+    }
+
+    private class StatusAreaImpl implements BuildProgressArea {
+        private final LabelImpl[] entries = new LabelImpl[1];
+
+        public StatusAreaImpl(Cursor writePos) {
+            entries[0] = new LabelImpl(writePos);
+        }
+
+        @Override
+        public Label[] getEntries() {
+            return entries;
+        }
+
+        public void redraw() {
+            for (LabelImpl label : entries) {
+                label.redraw();
+            }
         }
     }
 
@@ -246,7 +272,7 @@ public class AnsiConsole implements Console {
         protected void doEndLine(CharSequence endOfLine) {
             Ansi ansi = createAnsi();
             positionCursorAt(writePos, ansi);
-            if (writePos.row == statusBarCursor.row && statusBarCursor.col > writePos.col) {
+            if (writePos.row == statusAreaCursor.row && statusAreaCursor.col > writePos.col) {
                 ansi.eraseLine(Ansi.Erase.FORWARD);
             }
             ansi.newline();

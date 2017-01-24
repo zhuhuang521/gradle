@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,6 @@
 
 package org.gradle.internal.logging.console;
 
-public interface Console {
-    TextArea getMainArea();
-
-    BuildProgressArea getBuildProgressArea();
-
-    // TODO: Change to TextArea
-    Label getStatusBar();
-
-    /**
-     * Flushes any pending updates. Updates may or may not be buffered, and this method should be called to finish rendering and pending updates, such as
-     * updating the status bar.
-     */
-    void flush();
+public interface BuildProgressArea {
+    Label[] getEntries();
 }
