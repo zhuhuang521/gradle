@@ -19,7 +19,6 @@ package org.gradle.internal.logging.console;
 import org.fusesource.jansi.Ansi;
 import org.gradle.api.UncheckedIOException;
 import org.gradle.internal.logging.text.AbstractLineChoppingStyledTextOutput;
-import org.gradle.internal.logging.text.AbstractStyledTextOutput;
 
 import java.io.Flushable;
 import java.io.IOException;
@@ -101,12 +100,15 @@ public class AnsiConsole implements Console {
 
     private void newLineWritten(Cursor cursor) {
         writeCursor.col = 0;
+
+        // On any line except the bottom most one, a new line simply move the cursor to the next row.
+        // Note: the next row has a lower index.
         if (writeCursor.row > 0) {
             writeCursor.row--;
         } else {
             writeCursor.row = 0;
             textCursor.row++;
-            statusArea.moveDown();
+            statusArea.newLineAdjustment();
         }
         cursor.copyFrom(writeCursor);
     }
@@ -134,7 +136,7 @@ public class AnsiConsole implements Console {
         return textArea;
     }
 
-    private class Cursor {
+    private static class Cursor {
         int col; // count from left of screen, 0 = left most
         int row; // count from bottom of screen, 0 = bottom most, 1 == 2nd from bottom
 
@@ -150,14 +152,40 @@ public class AnsiConsole implements Console {
             col = 0;
             row = 0;
         }
+
+        public static Cursor newBottomLeft() {
+            Cursor result = new Cursor();
+            result.bottomLeft();
+            return result;
+        }
     }
 
     private class StatusAreaImpl implements BuildProgressArea {
-        private final LabelImpl[] entries = new LabelImpl[1];
+        private static final int STATUS_AREA_HEIGHT = 3;
+        private final LabelImpl[] entries = new LabelImpl[STATUS_AREA_HEIGHT];
 
-        public StatusAreaImpl(Cursor writePos) {
-            entries[0] = new LabelImpl(writePos);
+        public StatusAreaImpl(Cursor statusAreaPos) {
+            for (int i = 0, offset = STATUS_AREA_HEIGHT - 1; i < STATUS_AREA_HEIGHT; ++i, --offset) {
+                Cursor labelPos = new Cursor();
+                labelPos.copyFrom(statusAreaPos);
+                labelPos.row += offset;
+                entries[i] = new LabelImpl(labelPos, offset);
+            }
 
+            entries[0].setText("1st label");
+            entries[1].setText("2nd label");
+            entries[2].setText("3rd label");
+
+            Ansi ansi = createAnsi();
+            positionCursorAt(Cursor.newBottomLeft(), ansi);
+            for (int i = 0; i < entries.length - 1; ++i) {
+                ansi.newline();
+
+                // Don't use newLineWritten helper function as we don't want to move the status area
+                textCursor.row++;
+                writeCursor.row++;
+            }
+            write(ansi);
         }
 
         @Override
@@ -165,22 +193,47 @@ public class AnsiConsole implements Console {
             return entries;
         }
 
-        public boolean isInside(Cursor cursor) {
+        public boolean isOverlappingWith(Cursor cursor) {
             for (LabelImpl label : entries) {
-                if (cursor.row == label.writePos.row && label.writePos.col > cursor.col) {
+                // Only look at the overlapping rows. Columns are meaningless as we don't keep track how much
+                // overlapping characters was written to each rows.
+                if (cursor.row == label.writePos.row) {
                     return true;
                 }
             }
             return false;
         }
 
-        public void moveDown() {
+        public void newLineAdjustment() {
             for (LabelImpl label : entries) {
                 label.writePos.row++;
             }
         }
 
         public void redraw() {
+            // Calculate how many rows of the status area overlap with the text area
+            int numberOfOverlappedRows = Math.min(entries[0].writePos.row - textCursor.row + 1, STATUS_AREA_HEIGHT);
+
+            // If textCursor is on a status line but nothing was written, this means a new line was just written. While
+            // we wait for additional text, let's assume this row doesn't count as overlapping and use it as a status
+            // line. This avoid having an one line gab between the text area and the status area.
+            if (textCursor.col == 0) {
+                numberOfOverlappedRows--;
+            }
+
+            // Scroll the console by the number of overlapping rows
+            if (numberOfOverlappedRows > 0) {
+                Ansi ansi = createAnsi();
+                Cursor scroll = Cursor.newBottomLeft();
+                positionCursorAt(scroll, ansi);
+                for (; numberOfOverlappedRows > 0; --numberOfOverlappedRows) {
+                    ansi.newline();
+                    newLineWritten(scroll);
+                }
+                write(ansi);
+            }
+
+            // Redraw every entries of this area
             for (LabelImpl label : entries) {
                 label.redraw();
             }
@@ -192,11 +245,13 @@ public class AnsiConsole implements Console {
     // Must take into account Console dimensions in case console is very short
     private class LabelImpl implements Label {
         private final Cursor writePos;
+        private final int offset;
         private String writtenText = "";
         private String text = "";
 
-        public LabelImpl(Cursor writePos) {
+        public LabelImpl(Cursor writePos, int offset) {
             this.writePos = writePos;
+            this.offset = offset;
         }
 
         public void setText(String text) {
@@ -207,35 +262,25 @@ public class AnsiConsole implements Console {
         }
 
         public void redraw() {
-            boolean hasTextOnBottomLine = textCursor.row == 0 && textCursor.col > 0;
-            if (writePos.row == 0 && writtenText.equals(text) && !hasTextOnBottomLine) {
+            if (writePos.row == offset && writtenText.equals(text)) {
                 // Does not need to be redrawn
                 return;
             }
+
             Ansi ansi = createAnsi();
-            if (hasTextOnBottomLine) {
-                int staleStatusChars = writePos.row > 0 ? 0 : writtenText.length();
-                writePos.copyFrom(textCursor);
-                positionCursorAt(writePos, ansi);
-                if (staleStatusChars > textCursor.col) {
-                    ansi.eraseLine(Ansi.Erase.FORWARD);
-                }
-                ansi.newline();
-                newLineWritten(writePos);
-                writtenText = "";
-            } else {
-                writePos.bottomLeft();
-                positionCursorAt(writePos, ansi);
-            }
+            writePos.bottomLeft();
+            writePos.row += offset;
+            positionCursorAt(writePos, ansi);
             if (text.length() > 0) {
                 ColorMap.Color color = colorMap.getStatusBarColor();
                 color.on(ansi);
                 ansi.a(text);
                 color.off(ansi);
             }
-            if (text.length() < writtenText.length()) {
-                ansi.eraseLine(Ansi.Erase.FORWARD);
-            }
+
+            // Remove what ever may be at the end of the line
+            ansi.eraseLine(Ansi.Erase.FORWARD);
+
             write(ansi);
             charactersWritten(writePos, text.length());
             writtenText = text;
@@ -288,7 +333,7 @@ public class AnsiConsole implements Console {
         protected void doEndLine(CharSequence endOfLine) {
             Ansi ansi = createAnsi();
             positionCursorAt(writePos, ansi);
-            if (statusArea.isInside(writePos)) {
+            if (statusArea.isOverlappingWith(writePos)) {
                 ansi.eraseLine(Ansi.Erase.FORWARD);
             }
             ansi.newline();

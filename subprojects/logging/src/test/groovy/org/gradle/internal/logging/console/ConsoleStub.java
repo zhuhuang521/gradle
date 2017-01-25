@@ -31,6 +31,16 @@ public class ConsoleStub implements Console {
     }
 
     @Override
+    public BuildProgressArea getBuildProgressArea() {
+        return new BuildProgressArea() {
+            @Override
+            public Label[] getEntries() {
+                return new Label[0];
+            }
+        };
+    }
+
+    @Override
     public void flush() {
     }
 
