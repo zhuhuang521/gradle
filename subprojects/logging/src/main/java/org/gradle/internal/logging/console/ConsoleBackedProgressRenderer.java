@@ -58,6 +58,7 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
     private ProgressRenderer progressRenderer;
 
 
+    // TODO(EW): Seems like we want to maintain both the header and the worker statuses in here to avoid thrashing from having two entities updating the status area (different scheduled executors)
     public ConsoleBackedProgressRenderer(OutputEventListener listener, Console console, DefaultStatusBarFormatter statusBarFormatter, TimeProvider timeProvider) {
         this(listener, console, statusBarFormatter, Integer.getInteger("org.gradle.console.throttle", 85), Executors.newSingleThreadScheduledExecutor(), timeProvider);
     }

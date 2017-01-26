@@ -19,8 +19,10 @@ import org.fusesource.jansi.Ansi
 import org.fusesource.jansi.Ansi.Color
 import org.gradle.internal.SystemProperties
 import org.gradle.internal.logging.text.StyledTextOutput
+import spock.lang.Ignore
 import spock.lang.Specification
 
+@Ignore
 class AnsiConsoleTest extends Specification {
     private static final String EOL = SystemProperties.instance.lineSeparator
 

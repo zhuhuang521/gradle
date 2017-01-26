@@ -172,7 +172,6 @@ public class AnsiConsole implements Console {
         private static final int BUILD_PROGRESS_LABEL_COUNT = 5;
         private static final int STATUS_AREA_HEIGHT = 3 + BUILD_PROGRESS_LABEL_COUNT;
         private final List<LabelImpl> entries = new ArrayList<LabelImpl>(STATUS_AREA_HEIGHT);
-
         private final List<LabelImpl> buildProgressLabels = new ArrayList<LabelImpl>(BUILD_PROGRESS_LABEL_COUNT);
         private final Cursor statusAreaPos = new Cursor();
 
@@ -215,17 +214,17 @@ public class AnsiConsole implements Console {
         }
 
         @Override
-        public Label getStatusBar() {
-            return entries.get(0);
-        }
-
-        @Override
         public List<Label> getBuildProgressLabels() {
             List<Label> result = new ArrayList<Label>(buildProgressLabels.size());
             for (LabelImpl label : buildProgressLabels) {
                 result.add(label);
             }
             return result;
+        }
+
+        @Override
+        public Label getStatusBar() {
+            return entries.get(0);
         }
 
         public boolean isOverlappingWith(Cursor cursor) {

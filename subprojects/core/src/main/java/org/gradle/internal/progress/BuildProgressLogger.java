@@ -19,19 +19,15 @@ package org.gradle.internal.progress;
 import org.gradle.internal.logging.progress.ProgressLogger;
 import org.gradle.internal.logging.progress.ProgressLoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class BuildProgressLogger implements LoggerProvider {
 
     private final ProgressLoggerProvider loggerProvider;
 
     private ProgressLogger buildProgress;
-    private ProgressLogger configurationProgress;
-    private Map<String, ProgressLogger> projectConfigurationProgress = new HashMap<String, ProgressLogger>();
-
     private ProgressFormatter buildProgressFormatter;
-    private ProgressFormatter configurationProgressFormatter;
+
+    // TODO(ew): consider if/how to maintain a separate overall build progress from progress of workers
+    // We want to decouple this from DefaultGradleLauncherFactory (it should only know about one BuildProgressLogger)
 
     public BuildProgressLogger(ProgressLoggerFactory progressLoggerFactory) {
         this(new ProgressLoggerProvider(progressLoggerFactory, BuildProgressLogger.class));
@@ -42,61 +38,51 @@ public class BuildProgressLogger implements LoggerProvider {
     }
 
     public void buildStarted() {
-        buildProgress = loggerProvider.start("Initialize build", "Loading");
+        // TODO(ew): consider how to show buildSrc progress
+        buildProgress = loggerProvider.start("INITIALIZATION PHASE", "INITIALIZING");
+    }
+
+    public void settingsEvaluated() {
+        buildProgress.completed();
     }
 
     public void projectsLoaded(int totalProjects) {
-        configurationProgressFormatter = new SimpleProgressFormatter(totalProjects, "projects");
-        configurationProgress = loggerProvider.start("Configure projects", configurationProgressFormatter.getProgress());
+        buildProgressFormatter = new ProgressBar(13, '=', "CONFIGURING", totalProjects);
+        buildProgress = loggerProvider.start("CONFIGURATION PHASE", buildProgressFormatter.getProgress());
+    }
+
+    public void beforeEvaluate(String projectPath) {
+        // TODO(ew): show work in progress
+        // TODO(ew): show "> projectPath" in parallel progress
+    }
+
+    public void afterEvaluate(String projectPath) {
+        buildProgress.progress(buildProgressFormatter.incrementAndGetProgress());
+        // TODO(ew): show "> projectPath" in parallel progress
+    }
+
+    public void projectsEvaluated() {
+        // TODO(ew): investigate usefulness of this
     }
 
     public void graphPopulated(int totalTasks) {
-        configurationProgress.completed();
-        configurationProgress = null;
-
-        buildProgress.completed("Task graph ready");
-
-        buildProgressFormatter = new PercentageProgressFormatter("Building", totalTasks);
-        buildProgress = loggerProvider.start("Execute tasks", buildProgressFormatter.getProgress());
+        buildProgress.completed();
+        buildProgressFormatter = new ProgressBar(13, '=', "EXECUTING", totalTasks);
+        buildProgress = loggerProvider.start("EXECUTION PHASE", buildProgressFormatter.getProgress());
     }
 
-    public void buildFinished() {
-        for (ProgressLogger l : projectConfigurationProgress.values()) {
-            l.completed();
-        }
-        if (configurationProgress != null) {
-            configurationProgress.completed();
-        }
-        buildProgress.completed();
-        buildProgress = null;
-        buildProgressFormatter = null;
-        configurationProgress = null;
+    public void beforeExecute() {
+        // TODO(ew): show work-in-progress
     }
 
     public void afterExecute() {
         buildProgress.progress(buildProgressFormatter.incrementAndGetProgress());
     }
 
-    public void settingsEvaluated() {
-        buildProgress.progress("Configuring");
-    }
-
-    public void beforeEvaluate(String projectPath) {
-        if (configurationProgress != null) {
-            ProgressLogger logger = loggerProvider.start("Configure project " + projectPath, projectPath.equals(":") ? "root project" : projectPath);
-            projectConfigurationProgress.put(projectPath, logger);
-        }
-    }
-
-    public void afterEvaluate(String projectPath) {
-        if (configurationProgress != null) {
-            ProgressLogger logger = projectConfigurationProgress.remove(projectPath);
-            if (logger == null) {
-                throw new IllegalStateException("Unexpected afterEvaluate event received without beforeEvaluate");
-            }
-            logger.completed();
-            configurationProgress.progress(configurationProgressFormatter.incrementAndGetProgress());
-        }
+    public void buildFinished() {
+        buildProgress.completed();
+        buildProgress = null;
+        buildProgressFormatter = null;
     }
 
     public ProgressLogger getLogger() {

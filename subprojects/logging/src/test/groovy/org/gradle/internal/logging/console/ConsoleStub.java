@@ -37,6 +37,12 @@ public class ConsoleStub implements Console {
             public Label[] getEntries() {
                 return new Label[0];
             }
+
+            @Override
+            public Label getHeader() {
+                // TODO(ew): impl
+                return null;
+            }
         };
     }
 
