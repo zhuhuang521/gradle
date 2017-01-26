@@ -31,7 +31,7 @@ public class ProgressOperations {
         if (parentOperationId != null) {
             parent = operationsById.get(parentOperationId);
         }
-        ProgressOperation operation = new ProgressOperation(description, status, parent);
+        ProgressOperation operation = new ProgressOperation(description, status, operationId, parent);
         operationsById.put(operationId, operation);
         return operation;
     }
