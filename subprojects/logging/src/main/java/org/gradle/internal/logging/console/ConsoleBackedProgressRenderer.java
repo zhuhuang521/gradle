@@ -23,6 +23,7 @@ import org.gradle.internal.logging.events.OutputEventListener;
 import org.gradle.internal.logging.events.ProgressCompleteEvent;
 import org.gradle.internal.logging.events.ProgressEvent;
 import org.gradle.internal.logging.events.ProgressStartEvent;
+import org.gradle.internal.nativeintegration.console.ConsoleMetaData;
 import org.gradle.internal.time.TimeProvider;
 
 import java.util.ArrayDeque;
@@ -41,7 +42,8 @@ import java.util.concurrent.TimeUnit;
 public class ConsoleBackedProgressRenderer implements OutputEventListener {
     private final OutputEventListener listener;
     private final Console console;
-    // TODO: use ProgressOperations to maintain all operations in progress
+    private final ConsoleMetaData consoleMetaData;
+    private final BuildStatusRenderer buildStatusRenderer;
     private final ProgressOperations operations = new ProgressOperations();
     private final DefaultStatusBarFormatter statusBarFormatter;
     private final ScheduledExecutorService executor;
@@ -49,28 +51,29 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
     private final int throttleMs;
     // Protected by lock
     private final Object lock = new Object();
+
     private long lastUpdate;
     private final List<OutputEvent> queue = new ArrayList<OutputEvent>();
     // TODO: Replace with Fixed size HashMap with stable ordering
-    private ProgressOperation mostRecentOperation;
+    private OperationIdentifier rootOperationId;
     // TODO: Replace with operation status area
     private Label statusBar;
     private ProgressRenderer progressRenderer;
 
-
-    // TODO(EW): Seems like we want to maintain both the header and the worker statuses in here to avoid thrashing from having two entities updating the status area (different scheduled executors)
-    public ConsoleBackedProgressRenderer(OutputEventListener listener, Console console, DefaultStatusBarFormatter statusBarFormatter, TimeProvider timeProvider) {
-        this(listener, console, statusBarFormatter, Integer.getInteger("org.gradle.console.throttle", 85), Executors.newSingleThreadScheduledExecutor(), timeProvider);
+    public ConsoleBackedProgressRenderer(OutputEventListener listener, Console console, ConsoleMetaData consoleMetaData, DefaultStatusBarFormatter statusBarFormatter, TimeProvider timeProvider) {
+        this(listener, console, consoleMetaData, statusBarFormatter, Integer.getInteger("org.gradle.console.throttle", 85), Executors.newSingleThreadScheduledExecutor(), timeProvider);
     }
 
-    ConsoleBackedProgressRenderer(OutputEventListener listener, Console console, DefaultStatusBarFormatter statusBarFormatter, int throttleMs, ScheduledExecutorService executor, TimeProvider timeProvider) {
+    ConsoleBackedProgressRenderer(OutputEventListener listener, Console console, ConsoleMetaData consoleMetaData, DefaultStatusBarFormatter statusBarFormatter, int throttleMs, ScheduledExecutorService executor, TimeProvider timeProvider) {
         this.throttleMs = throttleMs;
         this.listener = listener;
         this.console = console;
+        this.consoleMetaData = consoleMetaData;
         this.statusBarFormatter = statusBarFormatter;
         this.executor = executor;
         this.timeProvider = timeProvider;
         this.progressRenderer = new ProgressRenderer(console.getBuildProgressArea().getBuildProgressLabels());
+        this.buildStatusRenderer = new BuildStatusRenderer(getStatusBar());
     }
 
     public void onOutput(OutputEvent newEvent) {
@@ -116,20 +119,29 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
 
         // TODO: Render Up to 4 events in progress
         // Best if we can avoid re-writing operations that haven't changed
-        ProgressOperation lastOp = mostRecentOperation;
         for (OutputEvent event : queue) {
             try {
                 if (event instanceof ProgressStartEvent) {
                     ProgressStartEvent startEvent = (ProgressStartEvent) event;
-                    lastOp = operations.start(startEvent.getShortDescription(), startEvent.getStatus(), startEvent.getOperationId(), startEvent.getParentId());
-                    progressRenderer.attach(lastOp);
+                    // if it has no parent ID, assign this operation as the root operation
+                    if (startEvent.getParentId() == null) {
+                        rootOperationId = startEvent.getOperationId();
+                        buildStatusRenderer.buildStarted(startEvent);
+                    }
+                    ProgressOperation op = operations.start(startEvent.getShortDescription(), startEvent.getStatus(), startEvent.getOperationId(), startEvent.getParentId());
+                    progressRenderer.attach(op);
                 } else if (event instanceof ProgressCompleteEvent) {
-                    ProgressOperation op = operations.complete(((ProgressCompleteEvent) event).getOperationId());
-                    lastOp = op.getParent();
-                    progressRenderer.detach(op);
+                    ProgressCompleteEvent completeEvent = (ProgressCompleteEvent) event;
+                    if (completeEvent.getOperationId().equals(rootOperationId)) {
+                        buildStatusRenderer.buildFinished(completeEvent);
+                    }
+                    progressRenderer.detach(operations.complete(completeEvent.getOperationId()));
                 } else if (event instanceof ProgressEvent) {
                     ProgressEvent progressEvent = (ProgressEvent) event;
-                    lastOp = operations.progress(progressEvent.getStatus(), progressEvent.getOperationId());
+                    if (progressEvent.getOperationId().equals(rootOperationId)) {
+                        buildStatusRenderer.buildProgressed(progressEvent);
+                    }
+                    operations.progress(progressEvent.getStatus(), progressEvent.getOperationId());
                 }
                 listener.onOutput(event);
             } catch (Exception e) {
@@ -138,13 +150,8 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
         }
 
         progressRenderer.renderNow();
+        buildStatusRenderer.renderNow();
 
-        if (lastOp != null) {
-            getStatusBar().setText(statusBarFormatter.format(lastOp));
-        } else if (mostRecentOperation != null) {
-            getStatusBar().setText("");
-        }
-        mostRecentOperation = lastOp;
         queue.clear();
         lastUpdate = now;
         console.flush();
@@ -218,6 +225,42 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
 
             public void renderNow() {
                 label.setText(statusBarFormatter.format(operation));
+            }
+        }
+    }
+
+    // Maintain overall build status separately
+    private class BuildStatusRenderer {
+        private final Label buildStatusLabel;
+        private String currentBuildStatus;
+
+        private BuildStatusRenderer(Label buildStatusLabel) {
+            this.buildStatusLabel = buildStatusLabel;
+        }
+
+        void buildStarted(ProgressStartEvent progressStartEvent) {
+            currentBuildStatus = progressStartEvent.getShortDescription();
+        }
+
+        void buildProgressed(ProgressEvent progressEvent) {
+            currentBuildStatus = progressEvent.getStatus();
+        }
+
+        void buildFinished(ProgressCompleteEvent progressCompleteEvent) {
+            currentBuildStatus = "";
+        }
+
+        String trimToConsole(String str) {
+            int width = consoleMetaData.getCols() - 1;
+            if (width > 0 && width < str.length()) {
+                return str.substring(0, width);
+            }
+            return str;
+        }
+
+        void renderNow() {
+            if (currentBuildStatus != null) {
+                buildStatusLabel.setText(trimToConsole(currentBuildStatus));
             }
         }
     }

@@ -170,7 +170,7 @@ public class AnsiConsole implements Console {
 
     private class StatusAreaImpl implements BuildProgressArea {
         private static final int BUILD_PROGRESS_LABEL_COUNT = 5;
-        private static final int STATUS_AREA_HEIGHT = 3 + BUILD_PROGRESS_LABEL_COUNT;
+        private static final int STATUS_AREA_HEIGHT = 1 + BUILD_PROGRESS_LABEL_COUNT;
         private final List<LabelImpl> entries = new ArrayList<LabelImpl>(STATUS_AREA_HEIGHT);
         private final List<LabelImpl> buildProgressLabels = new ArrayList<LabelImpl>(BUILD_PROGRESS_LABEL_COUNT);
         private final Cursor statusAreaPos = new Cursor();
@@ -191,9 +191,11 @@ public class AnsiConsole implements Console {
                 buildProgressLabels.add(label);
             }
 
-            entries.get(0).setText("1st label");
-            entries.get(1).setText("2nd label");
-            entries.get(2).setText("3rd label");
+            entries.get(0).setText("<-------------> 0% INITIALIZING");
+            entries.get(1).setText("> IDLE");
+            entries.get(2).setText("> IDLE");
+            entries.get(3).setText("> IDLE");
+            entries.get(4).setText("> IDLE");
 
             Ansi ansi = createAnsi();
             positionCursorAt(Cursor.newBottomLeft(), ansi);

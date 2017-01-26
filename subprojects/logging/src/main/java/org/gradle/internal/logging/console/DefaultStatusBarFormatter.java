@@ -28,7 +28,7 @@ public class DefaultStatusBarFormatter {
     public String format(ProgressOperation op) {
         StringBuilder builder = new StringBuilder();
         ProgressOperation current = op;
-        while(current != null) {
+        while(current != null && current.getParent() != null) {
             String message = current.getMessage();
             current = current.getParent();
 

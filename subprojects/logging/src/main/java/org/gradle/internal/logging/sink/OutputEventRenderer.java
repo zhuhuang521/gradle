@@ -20,7 +20,6 @@ import net.jcip.annotations.ThreadSafe;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.StandardOutputListener;
 import org.gradle.api.logging.configuration.ConsoleOutput;
-import org.gradle.internal.time.TrueTimeProvider;
 import org.gradle.internal.event.ListenerBroadcast;
 import org.gradle.internal.logging.config.LoggingRouter;
 import org.gradle.internal.logging.console.AnsiConsole;
@@ -38,6 +37,7 @@ import org.gradle.internal.logging.text.StreamBackedStandardOutputListener;
 import org.gradle.internal.logging.text.StreamingStyledTextOutput;
 import org.gradle.internal.nativeintegration.console.ConsoleMetaData;
 import org.gradle.internal.nativeintegration.console.FallbackConsoleMetaData;
+import org.gradle.internal.time.TrueTimeProvider;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -186,6 +186,7 @@ public class OutputEventRenderer implements OutputEventListener, LoggingRouter {
             new ProgressLogEventGenerator(
                 new StyledTextOutputBackedRenderer(console.getMainArea()), true),
             console,
+            consoleMetaData,
             new DefaultStatusBarFormatter(consoleMetaData),
             new TrueTimeProvider());
         synchronized (lock) {
