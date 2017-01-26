@@ -16,16 +16,24 @@
 
 package org.gradle.internal.logging.console;
 
-import org.gradle.internal.time.TimeProvider;
 import org.gradle.internal.logging.events.EndOutputEvent;
+import org.gradle.internal.logging.events.OperationIdentifier;
 import org.gradle.internal.logging.events.OutputEvent;
 import org.gradle.internal.logging.events.OutputEventListener;
 import org.gradle.internal.logging.events.ProgressCompleteEvent;
 import org.gradle.internal.logging.events.ProgressEvent;
 import org.gradle.internal.logging.events.ProgressStartEvent;
+import org.gradle.internal.time.TimeProvider;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +55,8 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
     private ProgressOperation mostRecentOperation;
     // TODO: Replace with operation status area
     private Label statusBar;
+    private ProgressRenderer progressRenderer;
+
 
     public ConsoleBackedProgressRenderer(OutputEventListener listener, Console console, DefaultStatusBarFormatter statusBarFormatter, TimeProvider timeProvider) {
         this(listener, console, statusBarFormatter, Integer.getInteger("org.gradle.console.throttle", 85), Executors.newSingleThreadScheduledExecutor(), timeProvider);
@@ -59,6 +69,7 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
         this.statusBarFormatter = statusBarFormatter;
         this.executor = executor;
         this.timeProvider = timeProvider;
+        this.progressRenderer = new ProgressRenderer(console.getBuildProgressArea().getBuildProgressLabels());
     }
 
     public void onOutput(OutputEvent newEvent) {
@@ -110,9 +121,11 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
                 if (event instanceof ProgressStartEvent) {
                     ProgressStartEvent startEvent = (ProgressStartEvent) event;
                     lastOp = operations.start(startEvent.getShortDescription(), startEvent.getStatus(), startEvent.getOperationId(), startEvent.getParentId());
+                    progressRenderer.attach(lastOp);
                 } else if (event instanceof ProgressCompleteEvent) {
                     ProgressOperation op = operations.complete(((ProgressCompleteEvent) event).getOperationId());
                     lastOp = op.getParent();
+                    progressRenderer.detach(op);
                 } else if (event instanceof ProgressEvent) {
                     ProgressEvent progressEvent = (ProgressEvent) event;
                     lastOp = operations.progress(progressEvent.getStatus(), progressEvent.getOperationId());
@@ -122,6 +135,9 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
                 throw new RuntimeException("Unable to process incoming event '" + event + "' (" + event.getClass().getSimpleName() + ")", e);
             }
         }
+
+        progressRenderer.renderNow();
+
         if (lastOp != null) {
             getStatusBar().setText(statusBarFormatter.format(lastOp));
         } else if (mostRecentOperation != null) {
@@ -138,5 +154,70 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
             statusBar = console.getStatusBar();
         }
         return statusBar;
+    }
+
+    private class ProgressRenderer {
+        private final Deque<Label> unusedProgressLabels;
+        private final Map<OperationIdentifier, AssociationLabel> operationIdToAssignedLabels = new HashMap<OperationIdentifier, AssociationLabel>();
+        private final Set<OperationIdentifier> receivedParentOperationId = new HashSet<OperationIdentifier>();
+        private final Deque<ProgressOperation> unassignedProgressOperations = new ArrayDeque<ProgressOperation>();
+
+        ProgressRenderer(Collection<Label> progressLabels) {
+            this.unusedProgressLabels = new ArrayDeque<Label>(progressLabels);
+        }
+
+        public void attach(ProgressOperation operation) {
+            AssociationLabel association = null;
+            if (operation.getParent() != null) {
+                association = operationIdToAssignedLabels.remove(operation.getParent().getOperationId());
+                if (association != null) {
+                    receivedParentOperationId.add(operation.getParent().getOperationId());
+                }
+            }
+            if (association == null && !unusedProgressLabels.isEmpty()) {
+                association = new AssociationLabel(operation, unusedProgressLabels.pop());
+            }
+
+            if (association == null) {
+                unassignedProgressOperations.addLast(operation);
+            } else {
+                operationIdToAssignedLabels.put(operation.getOperationId(), association);
+            }
+        }
+
+        public void detach(ProgressOperation operation) {
+            AssociationLabel association = operationIdToAssignedLabels.remove(operation.getOperationId());
+            if (association != null) {
+                association.label.setText("");
+                unusedProgressLabels.push(association.label);
+                if (operation.getParent() != null && receivedParentOperationId.remove(operation.getParent().getOperationId())) {
+                    attach(operation.getParent());
+                } else if (!unassignedProgressOperations.isEmpty()){
+                    attach(unassignedProgressOperations.pop());
+                }
+            } else {
+                unassignedProgressOperations.remove(operation);
+            }
+        }
+
+        public void renderNow() {
+            for (AssociationLabel associatedLabel : operationIdToAssignedLabels.values()) {
+                associatedLabel.renderNow();
+            }
+        }
+
+        private class AssociationLabel {
+            final ProgressOperation operation;
+            final Label label;
+
+            AssociationLabel(ProgressOperation operation, Label label) {
+                this.operation = operation;
+                this.label = label;
+            }
+
+            public void renderNow() {
+                label.setText(statusBarFormatter.format(operation));
+            }
+        }
     }
 }

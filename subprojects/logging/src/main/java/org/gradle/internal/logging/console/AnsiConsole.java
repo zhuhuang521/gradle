@@ -22,6 +22,8 @@ import org.gradle.internal.logging.text.AbstractLineChoppingStyledTextOutput;
 
 import java.io.Flushable;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AnsiConsole implements Console {
     private static final int CHARS_PER_TAB_STOP = 8;
@@ -123,7 +125,7 @@ public class AnsiConsole implements Console {
 
     @Override
     public Label getStatusBar() {
-        return statusArea.getEntries()[0];
+        return statusArea.getStatusBar();
     }
 
     @Override
@@ -158,27 +160,45 @@ public class AnsiConsole implements Console {
             result.bottomLeft();
             return result;
         }
+
+        public static Cursor from(Cursor position) {
+            Cursor result = new Cursor();
+            result.copyFrom(position);
+            return result;
+        }
     }
 
     private class StatusAreaImpl implements BuildProgressArea {
-        private static final int STATUS_AREA_HEIGHT = 3;
-        private final LabelImpl[] entries = new LabelImpl[STATUS_AREA_HEIGHT];
+        private static final int BUILD_PROGRESS_LABEL_COUNT = 5;
+        private static final int STATUS_AREA_HEIGHT = 3 + BUILD_PROGRESS_LABEL_COUNT;
+        private final List<LabelImpl> entries = new ArrayList<LabelImpl>(STATUS_AREA_HEIGHT);
+
+        private final List<LabelImpl> buildProgressLabels = new ArrayList<LabelImpl>(BUILD_PROGRESS_LABEL_COUNT);
+        private final Cursor statusAreaPos = new Cursor();
 
         public StatusAreaImpl(Cursor statusAreaPos) {
-            for (int i = 0, offset = STATUS_AREA_HEIGHT - 1; i < STATUS_AREA_HEIGHT; ++i, --offset) {
-                Cursor labelPos = new Cursor();
-                labelPos.copyFrom(statusAreaPos);
-                labelPos.row += offset;
-                entries[i] = new LabelImpl(labelPos, offset);
+            this.statusAreaPos.copyFrom(statusAreaPos);
+            this.statusAreaPos.row += STATUS_AREA_HEIGHT - 1;
+
+            int offset = STATUS_AREA_HEIGHT - 1;
+
+            entries.add(create(statusAreaPos, offset--));
+            entries.add(create(statusAreaPos, offset--));
+            entries.add(create(statusAreaPos, offset--));
+
+            for (int i = 0; i < BUILD_PROGRESS_LABEL_COUNT; ++i) {
+                LabelImpl label = create(statusAreaPos, offset--);
+                entries.add(label);
+                buildProgressLabels.add(label);
             }
 
-            entries[0].setText("1st label");
-            entries[1].setText("2nd label");
-            entries[2].setText("3rd label");
+            entries.get(0).setText("1st label");
+            entries.get(1).setText("2nd label");
+            entries.get(2).setText("3rd label");
 
             Ansi ansi = createAnsi();
             positionCursorAt(Cursor.newBottomLeft(), ansi);
-            for (int i = 0; i < entries.length - 1; ++i) {
+            for (int newLinesToCreate = entries.size() - 1; newLinesToCreate == 0; --newLinesToCreate) {
                 ansi.newline();
 
                 // Don't use newLineWritten helper function as we don't want to move the status area
@@ -188,9 +208,24 @@ public class AnsiConsole implements Console {
             write(ansi);
         }
 
+        private LabelImpl create(Cursor statusAreaPos, int offset) {
+            Cursor labelPos = Cursor.from(statusAreaPos);
+            labelPos.row += offset;
+            return new LabelImpl(labelPos, offset);
+        }
+
         @Override
-        public Label[] getEntries() {
-            return entries;
+        public Label getStatusBar() {
+            return entries.get(0);
+        }
+
+        @Override
+        public List<Label> getBuildProgressLabels() {
+            List<Label> result = new ArrayList<Label>(buildProgressLabels.size());
+            for (LabelImpl label : buildProgressLabels) {
+                result.add(label);
+            }
+            return result;
         }
 
         public boolean isOverlappingWith(Cursor cursor) {
@@ -212,7 +247,7 @@ public class AnsiConsole implements Console {
 
         public void redraw() {
             // Calculate how many rows of the status area overlap with the text area
-            int numberOfOverlappedRows = Math.min(entries[0].writePos.row - textCursor.row + 1, STATUS_AREA_HEIGHT);
+            int numberOfOverlappedRows = Math.min(statusAreaPos.row - textCursor.row + 1, STATUS_AREA_HEIGHT);
 
             // If textCursor is on a status line but nothing was written, this means a new line was just written. While
             // we wait for additional text, let's assume this row doesn't count as overlapping and use it as a status

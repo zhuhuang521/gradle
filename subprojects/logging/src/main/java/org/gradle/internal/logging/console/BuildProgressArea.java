@@ -16,6 +16,9 @@
 
 package org.gradle.internal.logging.console;
 
+import java.util.List;
+
 public interface BuildProgressArea {
-    Label[] getEntries();
+    Label getStatusBar();
+    List<Label> getBuildProgressLabels();
 }
