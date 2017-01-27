@@ -82,11 +82,7 @@ public class BuildProgressFilter implements BuildListener, TaskExecutionGraphLis
     }
 
     @Override
-    public void projectsEvaluated(Gradle gradle) {
-        if (gradle == this.gradle) {
-            logger.projectsEvaluated();
-        }
-    }
+    public void projectsEvaluated(Gradle gradle) {}
 
     @Override
     public void beforeExecute(Task task) {
