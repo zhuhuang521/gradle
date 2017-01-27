@@ -175,6 +175,7 @@ public class AnsiConsole implements Console {
 
         private final List<RedrawableLabel> buildProgressLabels = new ArrayList<RedrawableLabel>(BUILD_PROGRESS_LABEL_COUNT);
         private final Cursor statusAreaPos = new Cursor();
+        private boolean isClosed = false;
 
         public StatusAreaImpl(Cursor statusAreaPos) {
             this.statusAreaPos.copyFrom(statusAreaPos);
@@ -221,6 +222,19 @@ public class AnsiConsole implements Console {
             return entries.get(0);
         }
 
+        @Override
+        public void close() {
+            isClosed = true;
+            for (RedrawableLabel label : entries) {
+                label.clear();
+            }
+
+            // Reset position
+            Ansi ansi = createAnsi();
+            positionCursorAt(statusAreaPos, ansi);
+            write(ansi);
+        }
+
         public boolean isOverlappingWith(Cursor cursor) {
             for (RedrawableLabel label : entries) {
                 // Only look at the overlapping rows. Columns are meaningless as we don't keep track how much
@@ -239,6 +253,10 @@ public class AnsiConsole implements Console {
         }
 
         public void redraw() {
+            if (isClosed) {
+                return;
+            }
+
             // Calculate how many rows of the status area overlap with the text area
             int numberOfOverlappedRows = Math.min(statusAreaPos.row - textCursor.row + 1, STATUS_AREA_HEIGHT);
 
@@ -280,6 +298,7 @@ public class AnsiConsole implements Console {
     private interface RedrawableLabel extends Label {
         void redraw();
         Cursor getWritePosition();
+        void clear();
     }
 
     private abstract class AbstractRedrawableLabel implements RedrawableLabel {
@@ -310,9 +329,8 @@ public class AnsiConsole implements Console {
         @Override
         public void redraw() {
             Ansi ansi = createAnsi();
-            writePos.bottomLeft();
-            writePos.row += offset;
-            positionCursorAt(writePos, ansi);
+
+            moveCursorToPosition(ansi);
 
             int charCount = renderLine(ansi);
 
@@ -321,6 +339,23 @@ public class AnsiConsole implements Console {
 
             write(ansi);
             charactersWritten(writePos, charCount);
+        }
+
+        @Override
+        public void clear() {
+            Ansi ansi = createAnsi();
+
+            moveCursorToPosition(ansi);
+
+            ansi.eraseLine(Ansi.Erase.FORWARD);
+
+            write(ansi);
+        }
+
+        private void moveCursorToPosition(Ansi ansi) {
+            writePos.bottomLeft();
+            writePos.row += offset;
+            positionCursorAt(writePos, ansi);
         }
 
         abstract int renderLine(Ansi ansi);

@@ -142,6 +142,8 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
                         buildStatusRenderer.buildProgressed(progressEvent);
                     }
                     operations.progress(progressEvent.getStatus(), progressEvent.getOperationId());
+                } else if (event instanceof EndOutputEvent) {
+                    console.getBuildProgressArea().close();
                 }
                 listener.onOutput(event);
             } catch (Exception e) {

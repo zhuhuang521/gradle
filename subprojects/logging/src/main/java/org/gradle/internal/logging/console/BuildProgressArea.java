@@ -21,4 +21,5 @@ import java.util.List;
 public interface BuildProgressArea {
     Label getStatusBar();
     List<Label> getBuildProgressLabels();
+    void close();
 }
