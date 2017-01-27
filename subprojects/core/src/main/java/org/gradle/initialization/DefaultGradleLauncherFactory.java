@@ -31,6 +31,7 @@ import org.gradle.execution.BuildConfigurationActionExecuter;
 import org.gradle.execution.BuildExecuter;
 import org.gradle.internal.buildevents.BuildLogger;
 import org.gradle.internal.buildevents.CacheStatisticsReporter;
+import org.gradle.internal.buildevents.ProjectEvaluationLogger;
 import org.gradle.internal.buildevents.TaskExecutionLogger;
 import org.gradle.internal.classpath.ClassPath;
 import org.gradle.internal.cleanup.BuildOutputCleanupListener;
@@ -134,6 +135,7 @@ public class DefaultGradleLauncherFactory implements GradleLauncherFactory {
         LoggerProvider loggerProvider = (parent == null) ? buildProgressLogger : LoggerProvider.NO_OP;
         listenerManager.useLogger(new TaskExecutionLogger(serviceRegistry.get(ProgressLoggerFactory.class), loggerProvider));
         if (parent == null) {
+            listenerManager.useLogger(new ProjectEvaluationLogger(serviceRegistry.get(ProgressLoggerFactory.class), loggerProvider));
             listenerManager.useLogger(new BuildLogger(Logging.getLogger(BuildLogger.class), serviceRegistry.get(StyledTextOutputFactory.class), startParameter, requestMetaData));
         }
 

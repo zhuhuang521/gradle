@@ -23,7 +23,6 @@ import spock.lang.Subject
 class BuildProgressLoggerTest extends Specification {
     ProgressLoggerProvider provider = Mock()
     ProgressLogger buildProgress = Mock()
-    ProgressLogger configurationProgress = Mock()
 
     @Subject buildProgressLogger = new BuildProgressLogger(provider)
 
@@ -49,7 +48,6 @@ class BuildProgressLoggerTest extends Specification {
 
         then:
         1 * provider.start(BuildProgressLogger.INITIALIZATION_PHASE_DESCRIPTION, _) >> buildProgress
-        1 * provider.start(BuildProgressLogger.CONFIGURING_PROJECTS, BuildProgressLogger.CONFIGURING_PROJECTS) >> configurationProgress
 
         when:
         buildProgressLogger.projectsLoaded(16)
@@ -59,24 +57,15 @@ class BuildProgressLoggerTest extends Specification {
         0 * _
 
         when:
-        buildProgressLogger.beforeEvaluate(":")
-
-        then:
-        1 * configurationProgress.progress("Configuring root project")
-        0 * _
-
-        when:
         buildProgressLogger.beforeEvaluate(":foo:bar")
 
         then:
-        1 * configurationProgress.progress("Configuring :foo:bar")
         0 * _
 
         when:
         buildProgressLogger.afterEvaluate(":foo:bar")
 
         then:
-        1 * configurationProgress.progress("Configuring :foo:bar complete")
         1 * buildProgress.progress(_)
         0 * _
 
@@ -84,7 +73,6 @@ class BuildProgressLoggerTest extends Specification {
         buildProgressLogger.graphPopulated(10)
 
         then:
-        1 * configurationProgress.completed()
         1 * buildProgress.completed()
     }
 
@@ -123,7 +111,6 @@ class BuildProgressLoggerTest extends Specification {
         then:
         1 * provider.start(BuildProgressLogger.INITIALIZATION_PHASE_DESCRIPTION, _) >> buildProgress
         1 * provider.start(BuildProgressLogger.CONFIGURATION_PHASE_DESCRIPTION, _) >> buildProgress
-        1 * provider.start(BuildProgressLogger.CONFIGURING_PROJECTS, _) >> configurationProgress
         1 * provider.start(BuildProgressLogger.EXECUTION_PHASE_DESCRIPTION, _) >> buildProgress
 
         when:
@@ -131,6 +118,7 @@ class BuildProgressLoggerTest extends Specification {
         buildProgressLogger.afterEvaluate(":bar")
 
         then:
+        1 * buildProgress.progress(_)
         0 * _
     }
 
@@ -143,13 +131,11 @@ class BuildProgressLoggerTest extends Specification {
         then:
         1 * provider.start(BuildProgressLogger.INITIALIZATION_PHASE_DESCRIPTION, _) >> buildProgress
         1 * provider.start(BuildProgressLogger.CONFIGURATION_PHASE_DESCRIPTION, _) >> buildProgress
-        1 * provider.start(BuildProgressLogger.CONFIGURING_PROJECTS, _) >> configurationProgress
 
         when:
         buildProgressLogger.buildFinished()
 
         then:
-        1 * configurationProgress.completed()
         1 * buildProgress.completed()
         0 * _
     }
