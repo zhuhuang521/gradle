@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-
-
 package org.gradle.internal.progress
 
 import org.gradle.internal.logging.progress.ProgressLogger
-import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Subject
 
-@Ignore
 class BuildProgressLoggerTest extends Specification {
     ProgressLoggerProvider provider = Mock()
     ProgressLogger progress = Mock()
-    ProgressLogger confProgress = Mock()
 
     @Subject logger = new BuildProgressLogger(provider)
 
@@ -35,19 +30,13 @@ class BuildProgressLoggerTest extends Specification {
         when: logger.buildStarted()
 
         then:
-        1 * provider.start('Initialize build', 'Loading') >> progress
+        1 * provider.start(BuildProgressLogger.INITIALIZATION_PHASE_DESCRIPTION, _) >> progress
         0 * _
 
         when: logger.settingsEvaluated()
 
         then:
-        1 * progress.progress("Configuring")
-        0 * _
-
-        when: logger.projectsLoaded(6)
-
-        then:
-        1 * provider.start("Configure projects", '0/6 projects') >> confProgress
+        1 * progress.completed()
         0 * _
     }
 
@@ -61,7 +50,7 @@ class BuildProgressLoggerTest extends Specification {
         logger.beforeEvaluate(":foo:bar")
 
         then:
-        1 * provider.start("Configure projects", '0/16 projects') >> confProgress
+        1 * provider.start(BuildProgressLogger.CONFIGURATION_PHASE_DESCRIPTION, _) >> progress
         1 * provider.start("Configure project :", 'root project') >> progress1
         1 * provider.start("Configure project :foo:bar", ':foo:bar') >> progress2
         0 * _
@@ -70,14 +59,14 @@ class BuildProgressLoggerTest extends Specification {
 
         then:
         1 * progress2.completed()
-        1 * confProgress.progress("1/16 projects")
+        1 * progress.progress()
         0 * _
 
         when: logger.afterEvaluate(":")
 
         then:
         1 * progress1.completed()
-        1 * confProgress.progress("2/16 projects")
+        1 * progress.progress("2/16 projects")
         0 * _
     }
 

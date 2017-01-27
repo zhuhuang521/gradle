@@ -17,15 +17,21 @@
 package org.gradle.internal.progress;
 
 public class ProgressBar implements ProgressFormatter {
+    private final String progressBarPrefix;
     private int progressBarWidth;
+    private final String progressBarSuffix;
     private char fillerChar;
     private int current;
+    private final char incompleteChar;
     private int total;
     private String suffix;
 
-    public ProgressBar(int width, char fillerChar, String suffix, int total) {
-        this.progressBarWidth = width;
-        this.fillerChar = fillerChar;
+    public ProgressBar(String progressBarPrefix, int progressBarWidth, String progressBarSuffix, char completeChar, char incompleteChar, String suffix, int total) {
+        this.progressBarPrefix = progressBarPrefix;
+        this.progressBarWidth = progressBarWidth;
+        this.progressBarSuffix = progressBarSuffix;
+        this.fillerChar = completeChar;
+        this.incompleteChar = incompleteChar;
         this.total = total;
         this.suffix = suffix;
     }
@@ -46,8 +52,9 @@ public class ProgressBar implements ProgressFormatter {
         int completedWidth = (int) ((current * 1.0) / total * progressBarWidth);
         int remainingWidth = progressBarWidth - completedWidth;
 
-        return "<" + new String(new char[completedWidth]).replace('\0', fillerChar)
-            + new String(new char[remainingWidth]).replace('\0', '-')
-            + "> " + (int) (current * 100.0 / total) + '%' + ' ' + suffix;
+        // TODO(ew): Break out suffix format as a separate thing
+        return progressBarPrefix + new String(new char[completedWidth]).replace('\0', fillerChar)
+            + new String(new char[remainingWidth]).replace('\0', incompleteChar)
+            + progressBarSuffix + " " + (int) (current * 100.0 / total) + '%' + ' ' + suffix;
     }
 }

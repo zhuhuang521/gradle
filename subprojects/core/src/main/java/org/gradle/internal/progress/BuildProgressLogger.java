@@ -19,11 +19,26 @@ package org.gradle.internal.progress;
 import org.gradle.internal.logging.progress.ProgressLogger;
 import org.gradle.internal.logging.progress.ProgressLoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class BuildProgressLogger implements LoggerProvider {
+    public static final String INITIALIZATION_PHASE_DESCRIPTION = "INITIALIZATION PHASE";
+    public static final String INITIALIZATION_PHASE_SHORT_DESCRIPTION = "INITIALIZING";
+    public static final String CONFIGURATION_PHASE_DESCRIPTION = "CONFIGURATION PHASE";
+    public static final String CONFIGURATION_PHASE_SHORT_DESCRIPTION = "CONFIGURING";
+    public static final String EXECUTION_PHASE_DESCRIPTION = "EXECUTION PHASE";
+    public static final String EXECUTION_PHASE_SHORT_DESCRIPTION = "EXECUTING";
+    public static final int PROGRESS_BAR_WIDTH = 13;
+    public static final String PROGRESS_BAR_PREFIX = "<";
+    public static final char PROGRESS_BAR_COMPLETE_CHAR = '=';
+    public static final char PROGRESS_BAR_INCOMPLETE_CHAR = '-';
+    public static final String PROGRESS_BAR_SUFFIX = ">";
 
     private final ProgressLoggerProvider loggerProvider;
 
     private ProgressLogger buildProgress;
+    private Map<String, ProgressLogger> projectConfigurationProgress = new HashMap<String, ProgressLogger>();
     private ProgressFormatter buildProgressFormatter;
 
     // TODO(ew): consider if/how to maintain a separate overall build progress from progress of workers
@@ -38,8 +53,10 @@ public class BuildProgressLogger implements LoggerProvider {
     }
 
     public void buildStarted() {
-        // TODO(ew): consider how to show buildSrc progress
-        buildProgress = loggerProvider.start("INITIALIZATION PHASE", "INITIALIZING");
+        // TODO(ew): consider how to show buildSrc progress — it seems like a separate build
+        // TODO(ew): test this with composite builds
+        buildProgressFormatter = newProgressBar(INITIALIZATION_PHASE_SHORT_DESCRIPTION, 1);
+        buildProgress = loggerProvider.start(INITIALIZATION_PHASE_DESCRIPTION, buildProgressFormatter.getProgress());
     }
 
     public void settingsEvaluated() {
@@ -47,18 +64,24 @@ public class BuildProgressLogger implements LoggerProvider {
     }
 
     public void projectsLoaded(int totalProjects) {
-        buildProgressFormatter = new ProgressBar(13, '=', "CONFIGURING", totalProjects);
-        buildProgress = loggerProvider.start("CONFIGURATION PHASE", buildProgressFormatter.getProgress());
+        buildProgressFormatter = newProgressBar(CONFIGURATION_PHASE_SHORT_DESCRIPTION, totalProjects);
+        buildProgress = loggerProvider.start(CONFIGURATION_PHASE_DESCRIPTION, buildProgressFormatter.getProgress());
     }
 
     public void beforeEvaluate(String projectPath) {
+        // show "> Configuring :projectPath" in parallel progress
+        ProgressLogger logger = loggerProvider.start("Configure project " + projectPath, projectPath.equals(":") ? "root project" : projectPath);
+        projectConfigurationProgress.put(projectPath, logger);
         // TODO(ew): show work in progress
-        // TODO(ew): show "> projectPath" in parallel progress
     }
 
     public void afterEvaluate(String projectPath) {
+        ProgressLogger logger = projectConfigurationProgress.remove(projectPath);
+        if (logger == null) {
+            throw new IllegalStateException("Unexpected afterEvaluate event received without beforeEvaluate");
+        }
+        logger.completed();
         buildProgress.progress(buildProgressFormatter.incrementAndGetProgress());
-        // TODO(ew): show "> projectPath" in parallel progress
     }
 
     public void projectsEvaluated() {
@@ -67,8 +90,8 @@ public class BuildProgressLogger implements LoggerProvider {
 
     public void graphPopulated(int totalTasks) {
         buildProgress.completed();
-        buildProgressFormatter = new ProgressBar(13, '=', "EXECUTING", totalTasks);
-        buildProgress = loggerProvider.start("EXECUTION PHASE", buildProgressFormatter.getProgress());
+        buildProgressFormatter = newProgressBar(EXECUTION_PHASE_SHORT_DESCRIPTION, totalTasks);
+        buildProgress = loggerProvider.start(EXECUTION_PHASE_DESCRIPTION, buildProgressFormatter.getProgress());
     }
 
     public void beforeExecute() {
@@ -80,6 +103,9 @@ public class BuildProgressLogger implements LoggerProvider {
     }
 
     public void buildFinished() {
+        for (ProgressLogger logger : projectConfigurationProgress.values()) {
+            logger.completed();
+        }
         buildProgress.completed();
         buildProgress = null;
         buildProgressFormatter = null;
@@ -90,5 +116,15 @@ public class BuildProgressLogger implements LoggerProvider {
             throw new IllegalStateException("Build logger is unavailable (it hasn't started or is already completed).");
         }
         return buildProgress;
+    }
+
+    protected ProgressBar newProgressBar(String initialSuffix, int totalWorkItems) {
+        return new ProgressBar(PROGRESS_BAR_PREFIX,
+            PROGRESS_BAR_WIDTH,
+            PROGRESS_BAR_SUFFIX,
+            PROGRESS_BAR_COMPLETE_CHAR,
+            PROGRESS_BAR_INCOMPLETE_CHAR,
+            initialSuffix,
+            totalWorkItems);
     }
 }
