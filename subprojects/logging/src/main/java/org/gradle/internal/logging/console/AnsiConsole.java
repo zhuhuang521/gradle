@@ -169,7 +169,7 @@ public class AnsiConsole implements Console {
     }
 
     private class StatusAreaImpl implements BuildProgressArea {
-        private static final int BUILD_PROGRESS_LABEL_COUNT = 5;
+        private static final int BUILD_PROGRESS_LABEL_COUNT = 4;
         private static final int STATUS_AREA_HEIGHT = 2 + BUILD_PROGRESS_LABEL_COUNT;
         private final List<RedrawableLabel> entries = new ArrayList<RedrawableLabel>(STATUS_AREA_HEIGHT);
 
