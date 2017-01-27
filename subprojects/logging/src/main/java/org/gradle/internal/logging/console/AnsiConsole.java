@@ -183,16 +183,16 @@ public class AnsiConsole implements Console {
 
             int offset = STATUS_AREA_HEIGHT - 1;
 
-            entries.add(new LabelImpl(statusAreaPos, offset--));
+            entries.add(new LabelImpl(offset--));
 
             for (int i = 0; i < BUILD_PROGRESS_LABEL_COUNT; ++i) {
-                RedrawableLabel label = new ProgressLabelImpl(statusAreaPos, offset--);
+                RedrawableLabel label = new ProgressLabelImpl(offset--);
                 entries.add(label);
                 buildProgressLabels.add(label);
             }
 
             // Parking space for the write cursor
-            entries.add(new LabelImpl(statusAreaPos, offset--));
+            entries.add(new LabelImpl(offset--));
 
             entries.get(0).setText("<-------------> 0% INITIALIZING");
 
@@ -302,14 +302,11 @@ public class AnsiConsole implements Console {
     }
 
     private abstract class AbstractRedrawableLabel implements RedrawableLabel {
-        protected final Cursor writePos;
+        protected final Cursor writePos = new Cursor();
         protected final int offset;
         protected String text = "";
 
-        AbstractRedrawableLabel(Cursor statusAreaPos, int offset) {
-            this.writePos = Cursor.from(statusAreaPos);
-            writePos.row += offset;
-
+        AbstractRedrawableLabel(int offset) {
             this.offset = offset;
         }
 
@@ -367,8 +364,8 @@ public class AnsiConsole implements Console {
     private class LabelImpl extends AbstractRedrawableLabel {
         private String writtenText = "";
 
-        public LabelImpl(Cursor statusAreaPos, int offset) {
-            super(statusAreaPos, offset);
+        public LabelImpl(int offset) {
+            super(offset);
         }
 
 
@@ -398,8 +395,8 @@ public class AnsiConsole implements Console {
     }
 
     private class ProgressLabelImpl extends AbstractRedrawableLabel {
-        public ProgressLabelImpl(Cursor writePos, int offset) {
-            super(writePos, offset);
+        public ProgressLabelImpl(int offset) {
+            super(offset);
         }
 
         @Override
