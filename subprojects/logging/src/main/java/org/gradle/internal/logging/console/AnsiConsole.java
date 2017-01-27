@@ -182,8 +182,6 @@ public class AnsiConsole implements Console {
             int offset = STATUS_AREA_HEIGHT - 1;
 
             entries.add(create(statusAreaPos, offset--));
-            entries.add(create(statusAreaPos, offset--));
-            entries.add(create(statusAreaPos, offset--));
 
             for (int i = 0; i < BUILD_PROGRESS_LABEL_COUNT; ++i) {
                 LabelImpl label = create(statusAreaPos, offset--);
@@ -196,6 +194,7 @@ public class AnsiConsole implements Console {
             entries.get(2).setText("> IDLE");
             entries.get(3).setText("> IDLE");
             entries.get(4).setText("> IDLE");
+            entries.get(5).setText("> IDLE");
 
             Ansi ansi = createAnsi();
             positionCursorAt(Cursor.newBottomLeft(), ansi);
