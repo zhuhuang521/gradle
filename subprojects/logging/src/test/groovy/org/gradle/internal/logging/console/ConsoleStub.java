@@ -17,6 +17,9 @@ package org.gradle.internal.logging.console;
 
 import org.gradle.internal.logging.text.TestStyledTextOutput;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ConsoleStub implements Console {
     private final TextAreaImpl mainArea = new TextAreaImpl();
 
@@ -34,14 +37,22 @@ public class ConsoleStub implements Console {
     public BuildProgressArea getBuildProgressArea() {
         return new BuildProgressArea() {
             @Override
-            public Label[] getEntries() {
-                return new Label[0];
+            public Label getStatusBar() {
+                return new Label() {
+                    public void setText(String text) {
+                        // TODO: testable impl
+                    }
+                };
             }
 
             @Override
-            public Label getHeader() {
-                // TODO(ew): impl
-                return null;
+            public List<Label> getBuildProgressLabels() {
+                return new ArrayList<Label>();
+            }
+
+            @Override
+            public void close() {
+
             }
         };
     }
