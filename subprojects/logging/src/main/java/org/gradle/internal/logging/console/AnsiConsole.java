@@ -171,8 +171,9 @@ public class AnsiConsole implements Console {
     private class StatusAreaImpl implements BuildProgressArea {
         private static final int BUILD_PROGRESS_LABEL_COUNT = 5;
         private static final int STATUS_AREA_HEIGHT = 2 + BUILD_PROGRESS_LABEL_COUNT;
-        private final List<LabelImpl> entries = new ArrayList<LabelImpl>(STATUS_AREA_HEIGHT);
-        private final List<LabelImpl> buildProgressLabels = new ArrayList<LabelImpl>(BUILD_PROGRESS_LABEL_COUNT);
+        private final List<RedrawableLabel> entries = new ArrayList<RedrawableLabel>(STATUS_AREA_HEIGHT);
+
+        private final List<RedrawableLabel> buildProgressLabels = new ArrayList<RedrawableLabel>(BUILD_PROGRESS_LABEL_COUNT);
         private final Cursor statusAreaPos = new Cursor();
 
         public StatusAreaImpl(Cursor statusAreaPos) {
@@ -181,23 +182,18 @@ public class AnsiConsole implements Console {
 
             int offset = STATUS_AREA_HEIGHT - 1;
 
-            entries.add(create(statusAreaPos, offset--));
+            entries.add(new LabelImpl(statusAreaPos, offset--));
 
             for (int i = 0; i < BUILD_PROGRESS_LABEL_COUNT; ++i) {
-                LabelImpl label = create(statusAreaPos, offset--);
+                RedrawableLabel label = new ProgressLabelImpl(statusAreaPos, offset--);
                 entries.add(label);
                 buildProgressLabels.add(label);
             }
 
             // Parking space for the write cursor
-            entries.add(create(statusAreaPos, offset--));
+            entries.add(new LabelImpl(statusAreaPos, offset--));
 
             entries.get(0).setText("<-------------> 0% INITIALIZING");
-            entries.get(1).setText("> IDLE");
-            entries.get(2).setText("> IDLE");
-            entries.get(3).setText("> IDLE");
-            entries.get(4).setText("> IDLE");
-            entries.get(5).setText("> IDLE");
 
             Ansi ansi = createAnsi();
             positionCursorAt(Cursor.newBottomLeft(), ansi);
@@ -211,16 +207,10 @@ public class AnsiConsole implements Console {
             write(ansi);
         }
 
-        private LabelImpl create(Cursor statusAreaPos, int offset) {
-            Cursor labelPos = Cursor.from(statusAreaPos);
-            labelPos.row += offset;
-            return new LabelImpl(labelPos, offset);
-        }
-
         @Override
         public List<Label> getBuildProgressLabels() {
             List<Label> result = new ArrayList<Label>(buildProgressLabels.size());
-            for (LabelImpl label : buildProgressLabels) {
+            for (RedrawableLabel label : buildProgressLabels) {
                 result.add(label);
             }
             return result;
@@ -232,10 +222,10 @@ public class AnsiConsole implements Console {
         }
 
         public boolean isOverlappingWith(Cursor cursor) {
-            for (LabelImpl label : entries) {
+            for (RedrawableLabel label : entries) {
                 // Only look at the overlapping rows. Columns are meaningless as we don't keep track how much
                 // overlapping characters was written to each rows.
-                if (cursor.row == label.writePos.row) {
+                if (cursor.row == label.getWritePosition().row) {
                     return true;
                 }
             }
@@ -243,8 +233,8 @@ public class AnsiConsole implements Console {
         }
 
         public void newLineAdjustment() {
-            for (LabelImpl label : entries) {
-                label.writePos.row++;
+            for (RedrawableLabel label : entries) {
+                label.getWritePosition().row++;
             }
         }
 
@@ -272,7 +262,7 @@ public class AnsiConsole implements Console {
             }
 
             // Redraw every entries of this area
-            for (LabelImpl label : entries) {
+            for (RedrawableLabel label : entries) {
                 label.redraw();
             }
 
@@ -287,20 +277,24 @@ public class AnsiConsole implements Console {
         }
     }
 
-    // TODO: replace with BuildProgressTextArea
-    // Fixed to 5 lines: 1 Build Status Line (always trimmed) and 4 Operation status lines
-    // Must take into account Console dimensions in case console is very short
-    private class LabelImpl implements Label {
-        private final Cursor writePos;
-        private final int offset;
-        private String writtenText = "";
-        private String text = "";
+    private interface RedrawableLabel extends Label {
+        void redraw();
+        Cursor getWritePosition();
+    }
 
-        public LabelImpl(Cursor writePos, int offset) {
-            this.writePos = writePos;
+    private abstract class AbstractRedrawableLabel implements RedrawableLabel {
+        protected final Cursor writePos;
+        protected final int offset;
+        protected String text = "";
+
+        AbstractRedrawableLabel(Cursor statusAreaPos, int offset) {
+            this.writePos = Cursor.from(statusAreaPos);
+            writePos.row += offset;
+
             this.offset = offset;
         }
 
+        @Override
         public void setText(String text) {
             if (text.equals(this.text)) {
                 return;
@@ -308,16 +302,55 @@ public class AnsiConsole implements Console {
             this.text = text;
         }
 
+        @Override
+        public Cursor getWritePosition() {
+            return writePos;
+        }
+
+        @Override
+        public void redraw() {
+            Ansi ansi = createAnsi();
+            writePos.bottomLeft();
+            writePos.row += offset;
+            positionCursorAt(writePos, ansi);
+
+            int charCount = renderLine(ansi);
+
+            // Remove what ever may be at the end of the line
+            ansi.eraseLine(Ansi.Erase.FORWARD);
+
+            write(ansi);
+            charactersWritten(writePos, charCount);
+        }
+
+        abstract int renderLine(Ansi ansi);
+    }
+
+    // TODO: replace with BuildProgressTextArea
+    // Fixed to 5 lines: 1 Build Status Line (always trimmed) and 4 Operation status lines
+    // Must take into account Console dimensions in case console is very short
+    private class LabelImpl extends AbstractRedrawableLabel {
+        private String writtenText = "";
+
+        public LabelImpl(Cursor statusAreaPos, int offset) {
+            super(statusAreaPos, offset);
+        }
+
+
+        @Override
         public void redraw() {
             if (writePos.row == offset && writtenText.equals(text)) {
                 // Does not need to be redrawn
                 return;
             }
 
-            Ansi ansi = createAnsi();
-            writePos.bottomLeft();
-            writePos.row += offset;
-            positionCursorAt(writePos, ansi);
+            super.redraw();
+
+            writtenText = text;
+        }
+
+        @Override
+        int renderLine(Ansi ansi) {
             if (text.length() > 0) {
                 ColorMap.Color color = colorMap.getStatusBarColor();
                 color.on(ansi);
@@ -325,12 +358,31 @@ public class AnsiConsole implements Console {
                 color.off(ansi);
             }
 
-            // Remove what ever may be at the end of the line
-            ansi.eraseLine(Ansi.Erase.FORWARD);
+            return text.length();
+        }
+    }
 
-            write(ansi);
-            charactersWritten(writePos, text.length());
-            writtenText = text;
+    private class ProgressLabelImpl extends AbstractRedrawableLabel {
+        public ProgressLabelImpl(Cursor writePos, int offset) {
+            super(writePos, offset);
+        }
+
+        @Override
+        int renderLine(Ansi ansi) {
+            String text = this.text;
+            if (text.length() > 0) {
+                ColorMap.Color color = colorMap.getStatusBarColor();
+                color.on(ansi);
+                ansi.a(text);
+                color.off(ansi);
+            } else {
+                text = "> IDLE";
+                ansi.fgBrightBlack();
+                ansi.a(text);
+                ansi.fg(Ansi.Color.DEFAULT);
+            }
+
+            return text.length();
         }
     }
 
