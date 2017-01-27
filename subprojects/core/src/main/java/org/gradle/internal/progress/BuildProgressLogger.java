@@ -16,11 +16,9 @@
 
 package org.gradle.internal.progress;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.gradle.internal.logging.progress.ProgressLogger;
 import org.gradle.internal.logging.progress.ProgressLoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class BuildProgressLogger implements LoggerProvider {
     public static final String INITIALIZATION_PHASE_DESCRIPTION = "INITIALIZATION PHASE";
@@ -34,11 +32,12 @@ public class BuildProgressLogger implements LoggerProvider {
     public static final char PROGRESS_BAR_COMPLETE_CHAR = '=';
     public static final char PROGRESS_BAR_INCOMPLETE_CHAR = '-';
     public static final String PROGRESS_BAR_SUFFIX = ">";
+    public static final String CONFIGURING_PROJECTS = "Configuring projects";
 
     private final ProgressLoggerProvider loggerProvider;
 
     private ProgressLogger buildProgress;
-    private Map<String, ProgressLogger> projectConfigurationProgress = new HashMap<String, ProgressLogger>();
+    private ProgressLogger configurationProgressLogger;
     private ProgressFormatter buildProgressFormatter;
 
     // TODO(ew): consider if/how to maintain a separate overall build progress from progress of workers
@@ -61,6 +60,7 @@ public class BuildProgressLogger implements LoggerProvider {
 
     public void settingsEvaluated() {
         buildProgress.completed();
+        configurationProgressLogger = loggerProvider.start(CONFIGURING_PROJECTS, CONFIGURING_PROJECTS);
     }
 
     public void projectsLoaded(int totalProjects) {
@@ -69,19 +69,20 @@ public class BuildProgressLogger implements LoggerProvider {
     }
 
     public void beforeEvaluate(String projectPath) {
-        // show "> Configuring :projectPath" in parallel progress
-        ProgressLogger logger = loggerProvider.start("Configure project " + projectPath, projectPath.equals(":") ? "root project" : projectPath);
-        projectConfigurationProgress.put(projectPath, logger);
-        // TODO(ew): show work in progress
+        // --configuration-on-demand can sometimes cause projects to be configured after execution phase has started, see ConfigurationOnDemandIntegrationTest
+        if (configurationProgressLogger != null) {
+            // show "> Configuring :projectPath" in progress area
+            configurationProgressLogger.progress("Configuring " + (projectPath.equals(":") ? "root project" : projectPath));
+            // TODO(ew): show work in progress in overall build status
+        }
     }
 
     public void afterEvaluate(String projectPath) {
-        ProgressLogger logger = projectConfigurationProgress.remove(projectPath);
-        if (logger == null) {
-            throw new IllegalStateException("Unexpected afterEvaluate event received without beforeEvaluate");
+        if (configurationProgressLogger != null) {
+            configurationProgressLogger.progress("Configuring " + (projectPath.equals(":") ? "root project" : projectPath) + " complete");
+            // We don't want to accidentally count progress toward execution
+            buildProgress.progress(buildProgressFormatter.incrementAndGetProgress());
         }
-        logger.completed();
-        buildProgress.progress(buildProgressFormatter.incrementAndGetProgress());
     }
 
     public void projectsEvaluated() {
@@ -89,13 +90,20 @@ public class BuildProgressLogger implements LoggerProvider {
     }
 
     public void graphPopulated(int totalTasks) {
+        // Consider configuration completely done, even though configuration could still be occurring if using --configure-on-demand
+        if (configurationProgressLogger != null) {
+            configurationProgressLogger.completed();
+            configurationProgressLogger = null;
+        }
         buildProgress.completed();
+
+        // Begin execution phase of progress
         buildProgressFormatter = newProgressBar(EXECUTION_PHASE_SHORT_DESCRIPTION, totalTasks);
         buildProgress = loggerProvider.start(EXECUTION_PHASE_DESCRIPTION, buildProgressFormatter.getProgress());
     }
 
     public void beforeExecute() {
-        // TODO(ew): show work-in-progress
+        // TODO(ew): show work-in-progress in overall build status
     }
 
     public void afterExecute() {
@@ -103,12 +111,15 @@ public class BuildProgressLogger implements LoggerProvider {
     }
 
     public void buildFinished() {
-        for (ProgressLogger logger : projectConfigurationProgress.values()) {
-            logger.completed();
+        // build may have failed during configuration, cleanup
+        if (configurationProgressLogger != null) {
+            configurationProgressLogger.completed();
         }
+
         buildProgress.completed();
         buildProgress = null;
         buildProgressFormatter = null;
+        configurationProgressLogger = null;
     }
 
     public ProgressLogger getLogger() {
@@ -118,7 +129,8 @@ public class BuildProgressLogger implements LoggerProvider {
         return buildProgress;
     }
 
-    protected ProgressBar newProgressBar(String initialSuffix, int totalWorkItems) {
+    @VisibleForTesting
+    public ProgressBar newProgressBar(String initialSuffix, int totalWorkItems) {
         return new ProgressBar(PROGRESS_BAR_PREFIX,
             PROGRESS_BAR_WIDTH,
             PROGRESS_BAR_SUFFIX,

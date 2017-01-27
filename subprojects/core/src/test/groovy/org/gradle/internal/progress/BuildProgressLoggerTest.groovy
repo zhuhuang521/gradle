@@ -22,115 +22,113 @@ import spock.lang.Subject
 
 class BuildProgressLoggerTest extends Specification {
     ProgressLoggerProvider provider = Mock()
-    ProgressLogger progress = Mock()
+    ProgressLogger buildProgress = Mock()
+    ProgressLogger configurationProgress = Mock()
 
-    @Subject logger = new BuildProgressLogger(provider)
+    @Subject buildProgressLogger = new BuildProgressLogger(provider)
 
-    def "logs initialisation stage"() {
-        when: logger.buildStarted()
-
-        then:
-        1 * provider.start(BuildProgressLogger.INITIALIZATION_PHASE_DESCRIPTION, _) >> progress
-        0 * _
-
-        when: logger.settingsEvaluated()
+    def "logs initialization phase"() {
+        when:
+        buildProgressLogger.buildStarted()
 
         then:
-        1 * progress.completed()
+        1 * provider.start(BuildProgressLogger.INITIALIZATION_PHASE_DESCRIPTION, _) >> buildProgress
         0 * _
+
+        when:
+        buildProgressLogger.settingsEvaluated()
+
+        then:
+        1 * buildProgress.completed()
     }
 
-    def "logs configuration progress"() {
-        def progress1 = Mock(ProgressLogger)
-        def progress2 = Mock(ProgressLogger)
+    def "logs configuration phase"() {
+        when:
+        buildProgressLogger.buildStarted()
+        buildProgressLogger.settingsEvaluated()
+
+        then:
+        1 * provider.start(BuildProgressLogger.INITIALIZATION_PHASE_DESCRIPTION, _) >> buildProgress
+        1 * provider.start(BuildProgressLogger.CONFIGURING_PROJECTS, BuildProgressLogger.CONFIGURING_PROJECTS) >> configurationProgress
 
         when:
-        logger.projectsLoaded(16)
-        logger.beforeEvaluate(":")
-        logger.beforeEvaluate(":foo:bar")
+        buildProgressLogger.projectsLoaded(16)
 
         then:
-        1 * provider.start(BuildProgressLogger.CONFIGURATION_PHASE_DESCRIPTION, _) >> progress
-        1 * provider.start("Configure project :", 'root project') >> progress1
-        1 * provider.start("Configure project :foo:bar", ':foo:bar') >> progress2
+        1 * provider.start(BuildProgressLogger.CONFIGURATION_PHASE_DESCRIPTION, _) >> buildProgress
         0 * _
 
-        when: logger.afterEvaluate(":foo:bar")
+        when:
+        buildProgressLogger.beforeEvaluate(":")
 
         then:
-        1 * progress2.completed()
-        1 * progress.progress()
+        1 * configurationProgress.progress("Configuring root project")
         0 * _
 
-        when: logger.afterEvaluate(":")
+        when:
+        buildProgressLogger.beforeEvaluate(":foo:bar")
 
         then:
-        1 * progress1.completed()
-        1 * progress.progress("2/16 projects")
+        1 * configurationProgress.progress("Configuring :foo:bar")
         0 * _
+
+        when:
+        buildProgressLogger.afterEvaluate(":foo:bar")
+
+        then:
+        1 * configurationProgress.progress("Configuring :foo:bar complete")
+        1 * buildProgress.progress(_)
+        0 * _
+
+        when:
+        buildProgressLogger.graphPopulated(10)
+
+        then:
+        1 * configurationProgress.completed()
+        1 * buildProgress.completed()
     }
 
-    def "logs configuration completion"() {
+    def "logs execution phase"() {
         when:
-        logger.buildStarted()
-        logger.projectsLoaded(16)
-        logger.graphPopulated(10)
+        buildProgressLogger.buildStarted()
+        buildProgressLogger.graphPopulated(10)
 
         then:
-        1 * provider.start("Configure projects", _) >> confProgress
-        1 * provider.start('Initialize build', _) >> progress
-        0 * _
-
-        then:
-        1 * confProgress.completed()
-        1 * progress.completed("Task graph ready")
-        1 * provider.start("Execute tasks", "Building 0%");
-        0 * _
-    }
-
-    def "logs execution progress"() {
-        def executeProgress = Mock(ProgressLogger)
+        1 * provider.start(BuildProgressLogger.INITIALIZATION_PHASE_DESCRIPTION, _) >> buildProgress
+        1 * provider.start(BuildProgressLogger.EXECUTION_PHASE_DESCRIPTION, _) >> buildProgress
 
         when:
-        logger.buildStarted()
-        logger.projectsLoaded(16)
-        logger.graphPopulated(10)
+        buildProgressLogger.afterExecute()
 
         then:
-        1 * provider.start("Configure projects", _) >> confProgress
-        1 * provider.start('Initialize build', _) >> progress
-        1 * provider.start("Execute tasks", _) >> executeProgress
-
-        when:
-        logger.afterExecute()
-        logger.afterExecute()
-
-        then:
-        1 * executeProgress.progress("Building 10%")
-        1 * executeProgress.progress("Building 20%")
+        1 * buildProgress.progress(_)
         0 * _
 
-        when: logger.buildFinished()
+        when:
+        buildProgressLogger.buildFinished()
 
         then:
-        1 * executeProgress.completed()
+        1 * buildProgress.completed()
         0 * _
     }
 
     def "don't log progress for projects configured after official configuration phase"() {
         //currently this can happen, see the ConfigurationOnDemandIntegrationTest
         when:
-        logger.buildStarted()
-        logger.projectsLoaded(16)
-        logger.graphPopulated(10)
+        buildProgressLogger.buildStarted()
+        buildProgressLogger.settingsEvaluated()
+        buildProgressLogger.projectsLoaded(16)
+        buildProgressLogger.graphPopulated(10)
 
         then:
-        1 * provider.start("Configure projects", _) >> confProgress
-        1 * provider.start('Initialize build', _) >> progress
+        1 * provider.start(BuildProgressLogger.INITIALIZATION_PHASE_DESCRIPTION, _) >> buildProgress
+        1 * provider.start(BuildProgressLogger.CONFIGURATION_PHASE_DESCRIPTION, _) >> buildProgress
+        1 * provider.start(BuildProgressLogger.CONFIGURING_PROJECTS, _) >> configurationProgress
+        1 * provider.start(BuildProgressLogger.EXECUTION_PHASE_DESCRIPTION, _) >> buildProgress
 
         when:
-        logger.beforeEvaluate(":foo")
-        logger.afterEvaluate(":bar")
+        buildProgressLogger.beforeEvaluate(":foo")
+        buildProgressLogger.afterEvaluate(":bar")
 
         then:
         0 * _
@@ -138,29 +136,21 @@ class BuildProgressLoggerTest extends Specification {
 
     def "build finished cleans up configuration logger"() {
         when:
-        logger.buildStarted()
-        logger.projectsLoaded(16)
-        logger.buildFinished()
+        buildProgressLogger.buildStarted()
+        buildProgressLogger.settingsEvaluated()
+        buildProgressLogger.projectsLoaded(16)
 
         then:
-        1 * provider.start('Initialize build', _) >> progress
-        1 * provider.start("Configure projects", _) >> confProgress
-        1 * confProgress.completed()
-    }
-
-    def "build finished cleans up any unfinished configuration loggers"() {
-        def progress1 = Mock(ProgressLogger)
+        1 * provider.start(BuildProgressLogger.INITIALIZATION_PHASE_DESCRIPTION, _) >> buildProgress
+        1 * provider.start(BuildProgressLogger.CONFIGURATION_PHASE_DESCRIPTION, _) >> buildProgress
+        1 * provider.start(BuildProgressLogger.CONFIGURING_PROJECTS, _) >> configurationProgress
 
         when:
-        logger.buildStarted()
-        logger.projectsLoaded(16)
-        logger.beforeEvaluate(":")
-        logger.buildFinished()
+        buildProgressLogger.buildFinished()
 
         then:
-        1 * provider.start('Initialize build', _) >> progress
-        1 * provider.start("Configure project :", 'root project') >> progress1
-        1 * provider.start("Configure projects", _) >> confProgress
-        1 * progress1.completed()
+        1 * configurationProgress.completed()
+        1 * buildProgress.completed()
+        0 * _
     }
 }
