@@ -165,23 +165,41 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
     }
 
     private class ProgressRenderer {
+        // Track all unused labels to display future progress operation
         private final Deque<Label> unusedProgressLabels;
+
+        // Tack currently associated label with its progress operation
         private final Map<OperationIdentifier, AssociationLabel> operationIdToAssignedLabels = new HashMap<OperationIdentifier, AssociationLabel>();
-        private final Set<OperationIdentifier> receivedParentOperationId = new HashSet<OperationIdentifier>();
+
+        // Track any progress operation that either can't be display due to label shortage or child progress operation is already been displayed
         private final Deque<ProgressOperation> unassignedProgressOperations = new ArrayDeque<ProgressOperation>();
+
+        // Track the parent-children relation between progress operation to avoid displaying a parent when children are been diplayed
+        private final Map<OperationIdentifier, Set<OperationIdentifier>> parentIdToChildrenIds = new HashMap<OperationIdentifier, Set<OperationIdentifier>>();
 
         ProgressRenderer(Collection<Label> progressLabels) {
             this.unusedProgressLabels = new ArrayDeque<Label>(progressLabels);
         }
 
         public void attach(ProgressOperation operation) {
+            // Skip attach if a children is already present
+            if (isChildAssociationAlreadyExists(operation.getOperationId())) {
+                return;
+            }
+
             AssociationLabel association = null;
+
+            // Reuse parent label if possible
             if (operation.getParent() != null) {
+                addDirectChildOperationId(operation.getParent().getOperationId(), operation.getOperationId());
                 association = operationIdToAssignedLabels.remove(operation.getParent().getOperationId());
                 if (association != null) {
-                    receivedParentOperationId.add(operation.getParent().getOperationId());
+                    unusedProgressLabels.push(association.label);
+                    association = null;
                 }
             }
+
+            // Not parent? Try to use a new label
             if (association == null && !unusedProgressLabels.isEmpty()) {
                 association = new AssociationLabel(operation, unusedProgressLabels.pop());
             }
@@ -194,11 +212,15 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
         }
 
         public void detach(ProgressOperation operation) {
+            if (operation.getParent() != null) {
+                removeDirectChildOperationId(operation.getParent().getOperationId(), operation.getOperationId());
+            }
+
             AssociationLabel association = operationIdToAssignedLabels.remove(operation.getOperationId());
             if (association != null) {
                 association.label.setText("");
                 unusedProgressLabels.push(association.label);
-                if (operation.getParent() != null && receivedParentOperationId.remove(operation.getParent().getOperationId())) {
+                if (operation.getParent() != null) {
                     attach(operation.getParent());
                 } else if (!unassignedProgressOperations.isEmpty()){
                     attach(unassignedProgressOperations.pop());
@@ -208,7 +230,35 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
             }
         }
 
-        public void renderNow() {
+        private void addDirectChildOperationId(OperationIdentifier parentId, OperationIdentifier childId) {
+            Set<OperationIdentifier> children = parentIdToChildrenIds.get(parentId);
+            if (children == null) {
+                children = new HashSet<OperationIdentifier>();
+                parentIdToChildrenIds.put(parentId, children);
+            }
+            children.add(childId);
+        }
+
+        private void removeDirectChildOperationId(OperationIdentifier parentId, OperationIdentifier childId) {
+            Set<OperationIdentifier> children = parentIdToChildrenIds.get(parentId);
+            if (children == null) {
+                throw new IllegalStateException("");
+            }
+            children.remove(childId);
+            if (children.isEmpty()) {
+                parentIdToChildrenIds.remove(parentId);
+            }
+        }
+
+        private boolean isChildAssociationAlreadyExists(OperationIdentifier parentId) {
+            Set<OperationIdentifier> children = parentIdToChildrenIds.get(parentId);
+            if (children != null && !children.isEmpty()) {
+                return true;
+            }
+            return false;
+        }
+
+        void renderNow() {
             for (AssociationLabel associatedLabel : operationIdToAssignedLabels.values()) {
                 associatedLabel.renderNow();
             }
@@ -223,7 +273,7 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
                 this.label = label;
             }
 
-            public void renderNow() {
+            void renderNow() {
                 label.setText(statusBarFormatter.format(operation));
             }
         }
