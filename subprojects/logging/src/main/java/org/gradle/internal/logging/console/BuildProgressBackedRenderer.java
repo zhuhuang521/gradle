@@ -114,7 +114,6 @@ public class BuildProgressBackedRenderer implements OutputEventListener {
 
         AssociationLabel association = operationIdToAssignedLabels.remove(operation.getOperationId());
         if (association != null) {
-            association.label.setText("");
             unusedProgressLabels.push(association.label);
             if (operation.getParent() != null) {
                 attach(operation.getParent());
@@ -157,6 +156,9 @@ public class BuildProgressBackedRenderer implements OutputEventListener {
     void renderNow() {
         for (AssociationLabel associatedLabel : operationIdToAssignedLabels.values()) {
             associatedLabel.renderNow();
+        }
+        for (Label emptyLabel : unusedProgressLabels) {
+            emptyLabel.setText(labelFormatter.format(null));
         }
     }
 

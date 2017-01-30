@@ -23,7 +23,11 @@ import org.gradle.internal.logging.events.ProgressCompleteEvent;
 import org.gradle.internal.logging.events.ProgressEvent;
 import org.gradle.internal.logging.events.ProgressStartEvent;
 import org.gradle.internal.logging.events.RenderNowEvent;
+import org.gradle.internal.logging.text.Span;
+import org.gradle.internal.logging.text.Style;
 import org.gradle.internal.nativeintegration.console.ConsoleMetaData;
+
+import java.util.Arrays;
 
 public class BuildStatusBackedRenderer implements OutputEventListener {
     private final OutputEventListener listener;
@@ -86,7 +90,7 @@ public class BuildStatusBackedRenderer implements OutputEventListener {
 
     void renderNow() {
         if (currentBuildStatus != null) {
-            buildStatusLabel.setText(trimToConsole(currentBuildStatus));
+            buildStatusLabel.setText(Arrays.asList(new Span(Style.of(Style.Emphasis.BOLD), trimToConsole(currentBuildStatus))));
         }
     }
 }

@@ -19,10 +19,14 @@ package org.gradle.internal.logging.console;
 import org.fusesource.jansi.Ansi;
 import org.gradle.api.UncheckedIOException;
 import org.gradle.internal.logging.text.AbstractLineChoppingStyledTextOutput;
+import org.gradle.internal.logging.text.Span;
+import org.gradle.internal.logging.text.Style;
 
 import java.io.Flushable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class AnsiConsole implements Console {
@@ -186,7 +190,7 @@ public class AnsiConsole implements Console {
             entries.add(new LabelImpl(offset--));
 
             for (int i = 0; i < BUILD_PROGRESS_LABEL_COUNT; ++i) {
-                RedrawableLabel label = new ProgressLabelImpl(offset--);
+                RedrawableLabel label = new LabelImpl(offset--);
                 entries.add(label);
                 buildProgressLabels.add(label);
             }
@@ -194,7 +198,7 @@ public class AnsiConsole implements Console {
             // Parking space for the write cursor
             entries.add(new LabelImpl(offset--));
 
-            entries.get(0).setText("INITIALIZING...");
+            entries.get(0).setText(Arrays.asList(new Span(Style.of(Style.Emphasis.BOLD), "INITIALIZING...")));
 
             Ansi ansi = createAnsi();
             positionCursorAt(Cursor.newBottomLeft(), ansi);
@@ -311,18 +315,14 @@ public class AnsiConsole implements Console {
     private abstract class AbstractRedrawableLabel implements RedrawableLabel {
         protected final Cursor writePos = new Cursor();
         protected final int offset;
-        protected String text = "";
+        protected List<Span> spans = Collections.EMPTY_LIST;
 
         AbstractRedrawableLabel(int offset) {
             this.offset = offset;
         }
 
-        @Override
-        public void setText(String text) {
-            if (text.equals(this.text)) {
-                return;
-            }
-            this.text = text;
+        public void setText(List<Span> spans) {
+            this.spans = spans;
         }
 
         @Override
@@ -369,7 +369,7 @@ public class AnsiConsole implements Console {
     // Fixed to 5 lines: 1 Build Status Line (always trimmed) and 4 Operation status lines
     // Must take into account Console dimensions in case console is very short
     private class LabelImpl extends AbstractRedrawableLabel {
-        private String writtenText = "";
+        private List<Span> writtenSpans = Collections.EMPTY_LIST;
 
         public LabelImpl(int offset) {
             super(offset);
@@ -378,50 +378,29 @@ public class AnsiConsole implements Console {
 
         @Override
         public void redraw() {
-            if (writePos.row == offset && writtenText.equals(text)) {
+            if (writePos.row == offset && writtenSpans.equals(spans)) {
                 // Does not need to be redrawn
                 return;
             }
 
             super.redraw();
 
-            writtenText = text;
+            writtenSpans = spans;
         }
 
         @Override
         int renderLine(Ansi ansi) {
-            if (text.length() > 0) {
-                ColorMap.Color color = colorMap.getStatusBarColor();
+            int charCount = 0;
+            for (Span span : spans) {
+                ColorMap.Color color = colorMap.getColourFor(span.getStyle());
                 color.on(ansi);
-                ansi.a(text);
+                ansi.a(span.getText());
                 color.off(ansi);
+
+                charCount += span.getText().length();
             }
 
-            return text.length();
-        }
-    }
-
-    private class ProgressLabelImpl extends AbstractRedrawableLabel {
-        public ProgressLabelImpl(int offset) {
-            super(offset);
-        }
-
-        @Override
-        int renderLine(Ansi ansi) {
-            String text = this.text;
-            if (text.length() > 0) {
-                ColorMap.Color color = colorMap.getStatusBarColor();
-                color.on(ansi);
-                ansi.a(text);
-                color.off(ansi);
-            } else {
-                text = "> IDLE";
-                ansi.fgBrightBlack();
-                ansi.a(text);
-                ansi.fg(Ansi.Color.DEFAULT);
-            }
-
-            return text.length();
+            return charCount;
         }
     }
 

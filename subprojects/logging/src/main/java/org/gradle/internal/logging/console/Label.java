@@ -16,6 +16,10 @@
 
 package org.gradle.internal.logging.console;
 
+import org.gradle.internal.logging.text.Span;
+
+import java.util.List;
+
 public interface Label {
-    void setText(String text);
+    void setText(List<Span> spans);
 }
