@@ -153,7 +153,7 @@ public class BuildProgressBackedRenderer implements OutputEventListener {
         return false;
     }
 
-    void renderNow() {
+    private void renderNow() {
         for (AssociationLabel associatedLabel : operationIdToAssignedLabels.values()) {
             associatedLabel.renderNow();
         }

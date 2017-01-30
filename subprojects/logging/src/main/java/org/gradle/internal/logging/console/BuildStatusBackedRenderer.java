@@ -42,15 +42,15 @@ public class BuildStatusBackedRenderer implements OutputEventListener {
         this.consoleMetaData = consoleMetaData;
     }
 
-    void buildStarted(ProgressStartEvent progressStartEvent) {
+    private void buildStarted(ProgressStartEvent progressStartEvent) {
         currentBuildStatus = progressStartEvent.getShortDescription();
     }
 
-    void buildProgressed(ProgressEvent progressEvent) {
+    private void buildProgressed(ProgressEvent progressEvent) {
         currentBuildStatus = progressEvent.getStatus();
     }
 
-    void buildFinished(ProgressCompleteEvent progressCompleteEvent) {
+    private void buildFinished(ProgressCompleteEvent progressCompleteEvent) {
         currentBuildStatus = "";
     }
 
@@ -80,7 +80,7 @@ public class BuildStatusBackedRenderer implements OutputEventListener {
         listener.onOutput(event);
     }
 
-    String trimToConsole(String str) {
+    private String trimToConsole(String str) {
         int width = consoleMetaData.getCols() - 1;
         if (width > 0 && width < str.length()) {
             return str.substring(0, width);
@@ -88,7 +88,7 @@ public class BuildStatusBackedRenderer implements OutputEventListener {
         return str;
     }
 
-    void renderNow() {
+    private void renderNow() {
         if (currentBuildStatus != null) {
             buildStatusLabel.setText(Arrays.asList(new Span(Style.of(Style.Emphasis.BOLD), trimToConsole(currentBuildStatus))));
         }
