@@ -225,6 +225,9 @@ public class AnsiConsole implements Console {
         @Override
         public void close() {
             isClosed = true;
+
+            scrollConsole();
+
             for (RedrawableLabel label : entries) {
                 label.clear();
             }
@@ -257,6 +260,17 @@ public class AnsiConsole implements Console {
                 return;
             }
 
+            scrollConsole();
+
+            // Redraw every entries of this area
+            for (RedrawableLabel label : entries) {
+                label.redraw();
+            }
+
+            parkCursor();
+        }
+
+        private void scrollConsole() {
             // Calculate how many rows of the status area overlap with the text area
             int numberOfOverlappedRows = Math.min(statusAreaPos.row - textCursor.row + 1, STATUS_AREA_HEIGHT);
 
@@ -278,13 +292,6 @@ public class AnsiConsole implements Console {
                 }
                 write(ansi);
             }
-
-            // Redraw every entries of this area
-            for (RedrawableLabel label : entries) {
-                label.redraw();
-            }
-
-            parkCursor();
         }
 
         private void parkCursor() {
