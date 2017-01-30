@@ -201,7 +201,7 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
                 }
             }
 
-            // Not parent? Try to use a new label
+            // No parent? Try to use a new label
             if (association == null && !unusedProgressLabels.isEmpty()) {
                 association = new AssociationLabel(operation, unusedProgressLabels.pop());
             }
