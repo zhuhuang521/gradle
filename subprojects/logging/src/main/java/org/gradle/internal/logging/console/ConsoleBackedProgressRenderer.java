@@ -124,24 +124,28 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
                 if (event instanceof ProgressStartEvent) {
                     ProgressStartEvent startEvent = (ProgressStartEvent) event;
                     // if it has no parent ID, assign this operation as the root operation
-                    if (startEvent.getParentId() == null) {
+                    if (startEvent.getParentId() == null && startEvent.getCategory().equals("org.gradle.internal.progress.BuildProgressLogger")) {
                         rootOperationId = startEvent.getOperationId();
                         buildStatusRenderer.buildStarted(startEvent);
+                    } else {
+                        ProgressOperation op = operations.start(startEvent.getShortDescription(), startEvent.getStatus(), startEvent.getOperationId(), startEvent.getParentId());
+                        progressRenderer.attach(op);
                     }
-                    ProgressOperation op = operations.start(startEvent.getShortDescription(), startEvent.getStatus(), startEvent.getOperationId(), startEvent.getParentId());
-                    progressRenderer.attach(op);
                 } else if (event instanceof ProgressCompleteEvent) {
                     ProgressCompleteEvent completeEvent = (ProgressCompleteEvent) event;
                     if (completeEvent.getOperationId().equals(rootOperationId)) {
+                        rootOperationId = null;
                         buildStatusRenderer.buildFinished(completeEvent);
+                    } else {
+                        progressRenderer.detach(operations.complete(completeEvent.getOperationId()));
                     }
-                    progressRenderer.detach(operations.complete(completeEvent.getOperationId()));
                 } else if (event instanceof ProgressEvent) {
                     ProgressEvent progressEvent = (ProgressEvent) event;
                     if (progressEvent.getOperationId().equals(rootOperationId)) {
                         buildStatusRenderer.buildProgressed(progressEvent);
+                    } else {
+                        operations.progress(progressEvent.getStatus(), progressEvent.getOperationId());
                     }
-                    operations.progress(progressEvent.getStatus(), progressEvent.getOperationId());
                 } else if (event instanceof EndOutputEvent) {
                     console.getBuildProgressArea().close();
                 }
