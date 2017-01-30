@@ -36,7 +36,7 @@ public class BuildProgressBackedRenderer implements OutputEventListener {
     private final OutputEventListener listener;
     private final ProgressOperations operations = new ProgressOperations();
     private final BuildProgressArea progressArea;
-    private final DefaultStatusBarFormatter labelFormatter;
+    private final DefaultBuildProgressFormatter labelFormatter;
 
     // Track all unused labels to display future progress operation
     private final Deque<Label> unusedProgressLabels;
@@ -50,7 +50,7 @@ public class BuildProgressBackedRenderer implements OutputEventListener {
     // Track the parent-children relation between progress operation to avoid displaying a parent when children are been displayed
     private final Map<OperationIdentifier, Set<OperationIdentifier>> parentIdToChildrenIds = new HashMap<OperationIdentifier, Set<OperationIdentifier>>();
 
-    public BuildProgressBackedRenderer(OutputEventListener listener, BuildProgressArea progressArea, DefaultStatusBarFormatter labelFormatter) {
+    public BuildProgressBackedRenderer(OutputEventListener listener, BuildProgressArea progressArea, DefaultBuildProgressFormatter labelFormatter) {
         this.listener = listener;
         this.progressArea = progressArea;
         this.labelFormatter = labelFormatter;
@@ -158,7 +158,7 @@ public class BuildProgressBackedRenderer implements OutputEventListener {
             associatedLabel.renderNow();
         }
         for (Label emptyLabel : unusedProgressLabels) {
-            emptyLabel.setText(labelFormatter.format(null));
+            emptyLabel.setText(labelFormatter.format());
         }
     }
 

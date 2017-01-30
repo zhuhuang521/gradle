@@ -28,8 +28,8 @@ import org.gradle.internal.logging.console.BuildStatusBackedRenderer;
 import org.gradle.internal.logging.console.ColorMap;
 import org.gradle.internal.logging.console.Console;
 import org.gradle.internal.logging.console.ConsoleBackedProgressRenderer;
+import org.gradle.internal.logging.console.DefaultBuildProgressFormatter;
 import org.gradle.internal.logging.console.DefaultColorMap;
-import org.gradle.internal.logging.console.DefaultStatusBarFormatter;
 import org.gradle.internal.logging.console.StyledTextOutputBackedRenderer;
 import org.gradle.internal.logging.events.EndOutputEvent;
 import org.gradle.internal.logging.events.LogLevelChangeEvent;
@@ -189,7 +189,7 @@ public class OutputEventRenderer implements OutputEventListener, LoggingRouter {
                 new BuildProgressBackedRenderer(
                     new ProgressLogEventGenerator(
                         new StyledTextOutputBackedRenderer(console.getMainArea()), true),
-                    console.getBuildProgressArea(), new DefaultStatusBarFormatter(consoleMetaData)),
+                    console.getBuildProgressArea(), new DefaultBuildProgressFormatter(consoleMetaData)),
                 console.getStatusBar(), consoleMetaData),
             console,
             new TrueTimeProvider());

@@ -23,11 +23,11 @@ import org.gradle.internal.nativeintegration.console.ConsoleMetaData;
 import java.util.Arrays;
 import java.util.List;
 
-public class DefaultStatusBarFormatter {
+public class DefaultBuildProgressFormatter {
     private final static List<Span> IDLE_SPANS = Arrays.asList(new Span(Style.of(Style.Color.GREY), "> IDLE"));
     private final ConsoleMetaData consoleMetaData;
 
-    public DefaultStatusBarFormatter(ConsoleMetaData consoleMetaData) {
+    public DefaultBuildProgressFormatter(ConsoleMetaData consoleMetaData) {
         this.consoleMetaData = consoleMetaData;
     }
 
@@ -51,6 +51,10 @@ public class DefaultStatusBarFormatter {
         }
 
         return Arrays.asList(new Span(Style.of(Style.Emphasis.BOLD), trim(builder)));
+    }
+
+    public List<Span> format() {
+        return IDLE_SPANS;
     }
 
     private String trim(StringBuilder formattedString) {
