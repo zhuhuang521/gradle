@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,33 +14,22 @@
  * limitations under the License.
  */
 
-package org.gradle.caching.internal;
+package org.gradle.caching.configuration;
 
+import org.gradle.api.Action;
 import org.gradle.api.Incubating;
 import org.gradle.internal.HasInternalProtocol;
 
-import java.io.File;
-
-/**
- * Configuration for build caches.
- */
 @Incubating
 @HasInternalProtocol
 public interface BuildCacheConfiguration {
+    LocalBuildCache getLocal();
+    void local(Action<? super LocalBuildCache> configuration);
 
-    /**
-     * Use the default local directory cache. The cache directory path defaults to {@code $GRADLE_HOME/task-cache}.
-     * It can also be overridden via the {@code org.gradle.cache.tasks.directory} system property.
-     */
-    void useLocalCache();
+    <T extends BuildCache> T remote(Class<T> type);
 
-    /**
-     * Use a local directory cache in the given directory.
-     */
-    void useLocalCache(File directory);
+    <T extends BuildCache> T remote(Class<T> type, Action<? super T> configuration);
 
-    /**
-     * Use the give build cache factory.
-     */
-    void useCacheFactory(BuildCacheFactory factory);
+    BuildCache getRemote();
+    void remote(Action<? super BuildCache> configuration);
 }
