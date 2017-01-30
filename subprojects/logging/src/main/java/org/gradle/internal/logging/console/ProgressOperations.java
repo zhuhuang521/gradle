@@ -32,12 +32,12 @@ public class ProgressOperations {
 
     private final Map<OperationIdentifier, ProgressOperation> operationsById = new HashMap<OperationIdentifier, ProgressOperation>();
 
-    public ProgressOperation start(String description, String status, OperationIdentifier operationId, @Nullable OperationIdentifier parentOperationId) {
+    public ProgressOperation start(String description, String status, String category, OperationIdentifier operationId, @Nullable OperationIdentifier parentOperationId) {
         ProgressOperation parent = null;
         if (parentOperationId != null) {
             parent = operationsById.get(parentOperationId);
         }
-        ProgressOperation operation = new ProgressOperation(description, status, operationId, parent);
+        ProgressOperation operation = new ProgressOperation(description, status, category, operationId, parent);
         operationsById.put(operationId, operation);
         return operation;
     }

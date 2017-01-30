@@ -23,12 +23,14 @@ public class ProgressOperation {
 
     private final String shortDescription;
     private String status;
+    private final String category;
     private final OperationIdentifier operationId;
     private ProgressOperation parent;
 
-    public ProgressOperation(String shortDescription, String status, OperationIdentifier operationId, ProgressOperation parent) {
+    public ProgressOperation(String shortDescription, String status, String category, OperationIdentifier operationId, ProgressOperation parent) {
         this.shortDescription = shortDescription;
         this.status = status;
+        this.category = category;
         this.operationId = operationId;
         this.parent = parent;
     }
@@ -45,6 +47,10 @@ public class ProgressOperation {
             return shortDescription;
         }
         return null;
+    }
+
+    public String getCategory() {
+        return category;
     }
 
     public OperationIdentifier getOperationId() {

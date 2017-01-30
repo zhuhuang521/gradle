@@ -28,7 +28,7 @@ public class DefaultStatusBarFormatter {
     public String format(ProgressOperation op) {
         StringBuilder builder = new StringBuilder();
         ProgressOperation current = op;
-        while(current != null) {
+        while(current != null && !"org.gradle.internal.progress.BuildProgressLogger".equals(current.getCategory())) {
             String message = current.getMessage();
             current = current.getParent();
 
