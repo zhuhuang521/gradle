@@ -194,7 +194,7 @@ public class AnsiConsole implements Console {
             // Parking space for the write cursor
             entries.add(new LabelImpl(offset--));
 
-            entries.get(0).setText("<-------------> 0% INITIALIZING");
+            entries.get(0).setText("INITIALIZING...");
 
             Ansi ansi = createAnsi();
             positionCursorAt(Cursor.newBottomLeft(), ansi);
