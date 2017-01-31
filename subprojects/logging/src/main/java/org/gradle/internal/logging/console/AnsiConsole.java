@@ -199,9 +199,6 @@ public class AnsiConsole implements Console {
 
             // Parking space for the write cursor
             entries.add(new LabelImpl(offset--));
-
-            // TODO(ew): Extract header as a separate concept
-            entries.get(0).setText(Arrays.asList(new Span(Style.of(Style.Emphasis.BOLD), "<-------------> 0% INITIALIZING")));
         }
 
         @Override

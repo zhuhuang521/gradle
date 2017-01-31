@@ -31,10 +31,11 @@ import java.util.Arrays;
 
 // TODO(ew): LabelBackedBuildSummaryRenderer would be more accurate
 public class BuildStatusBackedRenderer implements OutputEventListener {
+    private static final String INITIAL_STATUS_TEXT = "<-------------> 0% INITIALIZING";
     private final OutputEventListener listener;
     private final Label buildStatusLabel;
     private final ConsoleMetaData consoleMetaData;
-    private String currentBuildStatus;
+    private String currentBuildStatus = INITIAL_STATUS_TEXT;
     private OperationIdentifier rootOperationId;
 
     public BuildStatusBackedRenderer(OutputEventListener listener, Label buildStatusLabel, ConsoleMetaData consoleMetaData) {
