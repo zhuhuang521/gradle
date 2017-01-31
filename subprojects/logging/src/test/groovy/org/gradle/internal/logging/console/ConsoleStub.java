@@ -15,6 +15,7 @@
  */
 package org.gradle.internal.logging.console;
 
+import org.gradle.internal.logging.text.Span;
 import org.gradle.internal.logging.text.TestStyledTextOutput;
 
 import java.util.ArrayList;
@@ -25,10 +26,9 @@ public class ConsoleStub implements Console {
 
     public Label getStatusBar() {
         return new Label() {
-            public void close() {
-            }
+            @Override
+            public void setText(List<Span> spans) {
 
-            public void setText(String text) {
             }
         };
     }
@@ -39,7 +39,8 @@ public class ConsoleStub implements Console {
             @Override
             public Label getStatusBar() {
                 return new Label() {
-                    public void setText(String text) {
+                    @Override
+                    public void setText(List<Span> spans) {
                         // TODO: testable impl
                     }
                 };

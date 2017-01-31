@@ -29,7 +29,7 @@ class ConsoleBackedProgressRendererTest extends OutputSpecification {
     def statusBar = Mock(Label)
     def timeProvider = new MockTimeProvider()
     def executor = new MockExecutor()
-    def statusBarFormatter = new DefaultStatusBarFormatter(Mock(ConsoleMetaData))
+    def statusBarFormatter = new DefaultBuildProgressFormatter(Mock(ConsoleMetaData))
 
     @Subject renderer = new ConsoleBackedProgressRenderer(listener, console, statusBarFormatter, 100, executor, timeProvider)
 

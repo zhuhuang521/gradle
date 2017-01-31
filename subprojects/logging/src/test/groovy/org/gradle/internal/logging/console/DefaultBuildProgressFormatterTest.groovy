@@ -20,10 +20,10 @@ import org.gradle.internal.nativeintegration.console.ConsoleMetaData
 import spock.lang.Specification
 import spock.lang.Subject
 
-class DefaultStatusBarFormatterTest extends Specification {
+class DefaultBuildProgressFormatterTest extends Specification {
 
     def consoleMetaData = Mock(ConsoleMetaData)
-    @Subject statusBarFormatter = new DefaultStatusBarFormatter(consoleMetaData)
+    @Subject statusBarFormatter = new DefaultBuildProgressFormatter(consoleMetaData)
 
     def "formats operations"() {
         def op1 = new ProgressOperation("shortDescr1", "status1", null)
