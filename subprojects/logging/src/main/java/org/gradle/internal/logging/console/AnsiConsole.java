@@ -202,17 +202,6 @@ public class AnsiConsole implements Console {
 
             // TODO(ew): Extract header as a separate concept
             entries.get(0).setText(Arrays.asList(new Span(Style.of(Style.Emphasis.BOLD), "<-------------> 0% INITIALIZING")));
-
-            Ansi ansi = createAnsi();
-            positionCursorAt(Cursor.newBottomLeft(), ansi);
-            for (int newLinesToCreate = entries.size() - 1; newLinesToCreate == 0; --newLinesToCreate) {
-                ansi.newline();
-
-                // Don't use newLineWritten helper function as we don't want to move the status area
-                textCursor.row++;
-                writeCursor.row++;
-            }
-            write(ansi);
         }
 
         @Override
