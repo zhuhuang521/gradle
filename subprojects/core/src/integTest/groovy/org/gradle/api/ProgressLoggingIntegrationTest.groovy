@@ -18,9 +18,7 @@ package org.gradle.api
 
 import org.gradle.integtests.fixtures.AbstractIntegrationSpec
 import org.gradle.integtests.fixtures.executer.ProgressLoggingFixture
-import spock.lang.Ignore
 
-@Ignore
 class ProgressLoggingIntegrationTest extends AbstractIntegrationSpec {
     @org.junit.Rule
     ProgressLoggingFixture events = new ProgressLoggingFixture(executer, temporaryFolder)
@@ -31,7 +29,7 @@ class ProgressLoggingIntegrationTest extends AbstractIntegrationSpec {
 
         then:
         events.progressLogged("Configure settings")
-        events.progressLogged("Configuring projects")
+        events.progressLogged("Configuring root project")
         events.progressLogged("Execute :help")
     }
 
