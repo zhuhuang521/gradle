@@ -140,36 +140,6 @@ public class AnsiConsole implements Console {
         return textArea;
     }
 
-    private static class Cursor {
-        int col; // count from left of screen, 0 = left most
-        int row; // count from bottom of screen, 0 = bottom most, 1 == 2nd from bottom
-
-        public void copyFrom(Cursor position) {
-            if (position == this) {
-                return;
-            }
-            this.col = position.col;
-            this.row = position.row;
-        }
-
-        public void bottomLeft() {
-            col = 0;
-            row = 0;
-        }
-
-        public static Cursor newBottomLeft() {
-            Cursor result = new Cursor();
-            result.bottomLeft();
-            return result;
-        }
-
-        public static Cursor from(Cursor position) {
-            Cursor result = new Cursor();
-            result.copyFrom(position);
-            return result;
-        }
-    }
-
     // TODO(ew): Test this class separately (may want to extract)
     private class StatusAreaImpl implements BuildProgressArea {
         private static final int BUILD_PROGRESS_LABEL_COUNT = 4;
