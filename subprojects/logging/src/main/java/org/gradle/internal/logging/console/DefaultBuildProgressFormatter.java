@@ -23,6 +23,7 @@ import org.gradle.internal.nativeintegration.console.ConsoleMetaData;
 import java.util.Arrays;
 import java.util.List;
 
+// TODO(ew): Consider renaming this and related classes. BuildProgress is ambiguous, something like OperationInProgress may be clearer
 public class DefaultBuildProgressFormatter {
     private final static List<Span> IDLE_SPANS = Arrays.asList(new Span(Style.of(Style.Color.GREY), "> IDLE"));
     private final ConsoleMetaData consoleMetaData;

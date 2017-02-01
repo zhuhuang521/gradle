@@ -184,6 +184,7 @@ public class OutputEventRenderer implements OutputEventListener, LoggingRouter {
     }
 
     public OutputEventRenderer addConsole(Console console, boolean stdout, boolean stderr, ConsoleMetaData consoleMetaData) {
+        // ConsoleBackedProgressRenderer => WorkInProgressRenderer(BuildSummaryFormatter, WorkInProgressFormatter) => ProgressLogEventGenerator
         final OutputEventListener consoleChain = new ConsoleBackedProgressRenderer(
              new BuildStatusBackedRenderer(
                 new BuildProgressBackedRenderer(

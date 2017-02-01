@@ -23,13 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ProgressOperations {
-
-    // TODO: consider maintaining overall build status separately or really different data structures here
-
-    // TODO(EW): figure out how we maintain build phase (if at all)
-
-    // TODO(EW): understand if there is only one root operation (e.g. is this a tree or a forest? what about composite builds?)
-
     private final Map<OperationIdentifier, ProgressOperation> operationsById = new HashMap<OperationIdentifier, ProgressOperation>();
 
     public ProgressOperation start(String description, String status, String category, OperationIdentifier operationId, @Nullable OperationIdentifier parentOperationId) {

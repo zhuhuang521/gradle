@@ -29,6 +29,7 @@ import org.gradle.internal.nativeintegration.console.ConsoleMetaData;
 
 import java.util.Arrays;
 
+// TODO(ew): LabelBackedBuildSummaryRenderer would be more accurate
 public class BuildStatusBackedRenderer implements OutputEventListener {
     private final OutputEventListener listener;
     private final Label buildStatusLabel;

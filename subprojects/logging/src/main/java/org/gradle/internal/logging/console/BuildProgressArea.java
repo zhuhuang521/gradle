@@ -19,7 +19,9 @@ package org.gradle.internal.logging.console;
 import java.util.List;
 
 public interface BuildProgressArea {
+    // TODO(ew): Consider whether this belongs in Console or here
     Label getStatusBar();
     List<Label> getBuildProgressLabels();
     void close();
+    // TODO(ew): Consider void open();
 }

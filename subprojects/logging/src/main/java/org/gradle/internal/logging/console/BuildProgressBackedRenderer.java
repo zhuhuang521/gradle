@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+// TODO(ew): Rename this. BuildProgress is ambiguous. This is actually backed by Labels (or a TextArea).
 public class BuildProgressBackedRenderer implements OutputEventListener {
     private final OutputEventListener listener;
     private final ProgressOperations operations = new ProgressOperations();
@@ -41,7 +42,7 @@ public class BuildProgressBackedRenderer implements OutputEventListener {
     // Track all unused labels to display future progress operation
     private final Deque<Label> unusedProgressLabels;
 
-    // Tack currently associated label with its progress operation
+    // Track currently associated label with its progress operation
     private final Map<OperationIdentifier, AssociationLabel> operationIdToAssignedLabels = new HashMap<OperationIdentifier, AssociationLabel>();
 
     // Track any progress operation that either can't be display due to label shortage or child progress operation is already been displayed

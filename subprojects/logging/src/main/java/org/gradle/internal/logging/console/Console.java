@@ -21,7 +21,7 @@ public interface Console {
 
     BuildProgressArea getBuildProgressArea();
 
-    // TODO: Change to TextArea
+    // TODO(ew): Consider whether this belongs in BuildProgressArea or here
     Label getStatusBar();
 
     /**

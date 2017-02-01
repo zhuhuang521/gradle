@@ -41,7 +41,7 @@ public class ConsoleStub implements Console {
                 return new Label() {
                     @Override
                     public void setText(List<Span> spans) {
-                        // TODO: testable impl
+                        // TODO(ew): testable impl
                     }
                 };
             }

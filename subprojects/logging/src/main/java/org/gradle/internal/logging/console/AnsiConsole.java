@@ -39,6 +39,7 @@ public class AnsiConsole implements Console {
     private final boolean forceAnsi;
     private final Cursor writeCursor = new Cursor();
     private final Cursor textCursor = new Cursor();
+    // TODO(ew): Is statusAreaCursor still used? Clean up any ambiguity or tangle between Console cursors and those maintained by text area/labels
     private final Cursor statusAreaCursor = new Cursor();
 
     public AnsiConsole(Appendable target, Flushable flushable, ColorMap colorMap) {
@@ -99,7 +100,6 @@ public class AnsiConsole implements Console {
     }
 
     private void charactersWritten(Cursor cursor, int count) {
-        // FIXME: Take line wrapping into account if possible
         writeCursor.col += count;
         cursor.copyFrom(writeCursor);
     }
@@ -172,6 +172,7 @@ public class AnsiConsole implements Console {
         }
     }
 
+    // TODO(ew): Test this class separately (may want to extract)
     private class StatusAreaImpl implements BuildProgressArea {
         private static final int BUILD_PROGRESS_LABEL_COUNT = 4;
         private static final int STATUS_AREA_HEIGHT = 2 + BUILD_PROGRESS_LABEL_COUNT;
@@ -182,6 +183,7 @@ public class AnsiConsole implements Console {
         private boolean isClosed;
 
         public StatusAreaImpl(Cursor statusAreaPos) {
+            // TODO(ew): Way too much work being done in constructor, making this impossible to test
             this.statusAreaPos.copyFrom(statusAreaPos);
             this.statusAreaPos.row += STATUS_AREA_HEIGHT - 1;
 
@@ -198,7 +200,8 @@ public class AnsiConsole implements Console {
             // Parking space for the write cursor
             entries.add(new LabelImpl(offset--));
 
-            entries.get(0).setText(Arrays.asList(new Span(Style.of(Style.Emphasis.BOLD), "INITIALIZING...")));
+            // TODO(ew): Extract header as a separate concept
+            entries.get(0).setText(Arrays.asList(new Span(Style.of(Style.Emphasis.BOLD), "<-------------> 0% INITIALIZING")));
 
             Ansi ansi = createAnsi();
             positionCursorAt(Cursor.newBottomLeft(), ansi);
@@ -232,6 +235,7 @@ public class AnsiConsole implements Console {
 
             scrollConsole();
 
+            // Clear progress area
             for (RedrawableLabel label : entries) {
                 label.clear();
             }
@@ -365,16 +369,13 @@ public class AnsiConsole implements Console {
         abstract int renderLine(Ansi ansi);
     }
 
-    // TODO: replace with BuildProgressTextArea
-    // Fixed to 5 lines: 1 Build Status Line (always trimmed) and 4 Operation status lines
-    // Must take into account Console dimensions in case console is very short
+    // TODO(ew): Test this independently (may want to extract)
     private class LabelImpl extends AbstractRedrawableLabel {
         private List<Span> writtenSpans = Collections.EMPTY_LIST;
 
         public LabelImpl(int offset) {
             super(offset);
         }
-
 
         @Override
         public void redraw() {

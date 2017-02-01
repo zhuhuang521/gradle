@@ -28,6 +28,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+// TODO(ew): It seems the purpose of this class is to throttle writes to the console and flush it.
+// TODO(ew): We should consider having one thing coordinating console writes and may need to rename this class to reflect that.
 public class ConsoleBackedProgressRenderer implements OutputEventListener {
     private static final RenderNowEvent RENDER_NOW_EVENT = new RenderNowEvent();
     private final OutputEventListener listener;
@@ -103,6 +105,7 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
             }
         }
 
+        // FIXME(ew): This seems like a bit of an abuse of the listener manager
         listener.onOutput(RENDER_NOW_EVENT);
 
         queue.clear();
