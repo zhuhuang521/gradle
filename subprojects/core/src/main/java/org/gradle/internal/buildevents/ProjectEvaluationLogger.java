@@ -39,7 +39,7 @@ public class ProjectEvaluationLogger implements ProjectEvaluationListener {
     public void beforeEvaluate(Project project) {
         // --configuration-on-demand can sometimes cause projects to be configured after execution phase has started
         // see ConfigurationOnDemandIntegrationTest
-        final String projectPath = (project.getPath().equals(":") ? "root project" : project.getPath());
+        final String projectPath = project.getPath().equals(":") ? "root project" : project.getPath();
         ProgressLogger currentTask = progressLoggerFactory
             .newOperation(ProjectEvaluationLogger.class, parentLoggerProvider.getLogger())
             .start("Configuring ".concat(projectPath), projectPath);

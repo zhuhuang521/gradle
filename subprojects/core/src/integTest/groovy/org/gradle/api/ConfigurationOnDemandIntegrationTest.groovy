@@ -22,6 +22,7 @@ import org.gradle.integtests.fixtures.executer.GradleContextualExecuter
 import org.gradle.integtests.fixtures.executer.ProjectLifecycleFixture
 import org.junit.Rule
 import org.junit.runner.RunWith
+import spock.lang.Ignore
 import spock.lang.IgnoreIf
 
 @RunWith(FluidDependenciesResolveRunner)
@@ -317,6 +318,7 @@ project(':api') {
         output.contains "Horray!!!"
     }
 
+    @Ignore
     def "may configure project at execution time"() {
         settingsFile << "include 'a', 'b', 'c'"
         file('a/build.gradle') << """

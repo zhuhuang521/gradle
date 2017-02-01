@@ -179,7 +179,7 @@ public class AnsiConsole implements Console {
 
         private final List<RedrawableLabel> buildProgressLabels = new ArrayList<RedrawableLabel>(BUILD_PROGRESS_LABEL_COUNT);
         private final Cursor statusAreaPos = new Cursor();
-        private boolean isClosed = false;
+        private boolean isClosed;
 
         public StatusAreaImpl(Cursor statusAreaPos) {
             this.statusAreaPos.copyFrom(statusAreaPos);

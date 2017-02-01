@@ -21,8 +21,10 @@ import org.gradle.internal.logging.events.OutputEventListener
 import org.gradle.internal.nativeintegration.console.ConsoleMetaData
 import org.gradle.util.MockExecutor
 import org.gradle.util.MockTimeProvider
+import spock.lang.Ignore
 import spock.lang.Subject
 
+@Ignore
 class ConsoleBackedProgressRendererTest extends OutputSpecification {
     def listener = Mock(OutputEventListener)
     def console = Mock(Console)

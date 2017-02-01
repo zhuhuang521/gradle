@@ -17,9 +17,11 @@
 package org.gradle.internal.logging.console
 
 import org.gradle.internal.nativeintegration.console.ConsoleMetaData
+import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Subject
 
+@Ignore
 class DefaultBuildProgressFormatterTest extends Specification {
 
     def consoleMetaData = Mock(ConsoleMetaData)
