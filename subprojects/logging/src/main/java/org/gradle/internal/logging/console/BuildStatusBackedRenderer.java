@@ -33,12 +33,12 @@ import java.util.Arrays;
 public class BuildStatusBackedRenderer implements OutputEventListener {
     private static final String INITIAL_STATUS_TEXT = "<-------------> 0% INITIALIZING";
     private final OutputEventListener listener;
-    private final Label buildStatusLabel;
+    private final StyledLabel buildStatusLabel;
     private final ConsoleMetaData consoleMetaData;
     private String currentBuildStatus = INITIAL_STATUS_TEXT;
     private OperationIdentifier rootOperationId;
 
-    public BuildStatusBackedRenderer(OutputEventListener listener, Label buildStatusLabel, ConsoleMetaData consoleMetaData) {
+    public BuildStatusBackedRenderer(OutputEventListener listener, StyledLabel buildStatusLabel, ConsoleMetaData consoleMetaData) {
         this.listener = listener;
         this.buildStatusLabel = buildStatusLabel;
         this.consoleMetaData = consoleMetaData;

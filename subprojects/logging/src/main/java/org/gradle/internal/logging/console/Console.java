@@ -22,7 +22,7 @@ public interface Console {
     BuildProgressArea getBuildProgressArea();
 
     // TODO(ew): Consider whether this belongs in BuildProgressArea or here
-    Label getStatusBar();
+    StyledLabel getStatusBar();
 
     /**
      * Flushes any pending updates. Updates may or may not be buffered, and this method should be called to finish rendering and pending updates, such as

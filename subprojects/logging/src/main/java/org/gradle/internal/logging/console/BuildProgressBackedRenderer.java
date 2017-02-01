@@ -40,7 +40,7 @@ public class BuildProgressBackedRenderer implements OutputEventListener {
     private final DefaultBuildProgressFormatter labelFormatter;
 
     // Track all unused labels to display future progress operation
-    private final Deque<Label> unusedProgressLabels;
+    private final Deque<StyledLabel> unusedProgressLabels;
 
     // Track currently associated label with its progress operation
     private final Map<OperationIdentifier, AssociationLabel> operationIdToAssignedLabels = new HashMap<OperationIdentifier, AssociationLabel>();
@@ -55,7 +55,7 @@ public class BuildProgressBackedRenderer implements OutputEventListener {
         this.listener = listener;
         this.progressArea = progressArea;
         this.labelFormatter = labelFormatter;
-        this.unusedProgressLabels = new ArrayDeque<Label>(progressArea.getBuildProgressLabels());
+        this.unusedProgressLabels = new ArrayDeque<StyledLabel>(progressArea.getBuildProgressLabels());
     }
 
     @Override
@@ -158,16 +158,16 @@ public class BuildProgressBackedRenderer implements OutputEventListener {
         for (AssociationLabel associatedLabel : operationIdToAssignedLabels.values()) {
             associatedLabel.renderNow();
         }
-        for (Label emptyLabel : unusedProgressLabels) {
+        for (StyledLabel emptyLabel : unusedProgressLabels) {
             emptyLabel.setText(labelFormatter.format());
         }
     }
 
     private class AssociationLabel {
         final ProgressOperation operation;
-        final Label label;
+        final StyledLabel label;
 
-        AssociationLabel(ProgressOperation operation, Label label) {
+        AssociationLabel(ProgressOperation operation, StyledLabel label) {
             this.operation = operation;
             this.label = label;
         }

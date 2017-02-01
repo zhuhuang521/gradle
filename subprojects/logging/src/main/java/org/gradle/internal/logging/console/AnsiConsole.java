@@ -126,7 +126,7 @@ public class AnsiConsole implements Console {
     }
 
     @Override
-    public Label getStatusBar() {
+    public StyledLabel getStatusBar() {
         return statusArea.getStatusBar();
     }
 
@@ -169,8 +169,8 @@ public class AnsiConsole implements Console {
         }
 
         @Override
-        public List<Label> getBuildProgressLabels() {
-            List<Label> result = new ArrayList<Label>(buildProgressLabels.size());
+        public List<StyledLabel> getBuildProgressLabels() {
+            List<StyledLabel> result = new ArrayList<StyledLabel>(buildProgressLabels.size());
             for (RedrawableLabel label : buildProgressLabels) {
                 result.add(label);
             }
@@ -178,7 +178,7 @@ public class AnsiConsole implements Console {
         }
 
         @Override
-        public Label getStatusBar() {
+        public StyledLabel getStatusBar() {
             return entries.get(0);
         }
 
@@ -261,12 +261,6 @@ public class AnsiConsole implements Console {
         }
     }
 
-    private interface RedrawableLabel extends Label {
-        void redraw();
-        Cursor getWritePosition();
-        void clear();
-    }
-
     private abstract class AbstractRedrawableLabel implements RedrawableLabel {
         protected final Cursor writePos = new Cursor();
         protected final int offset;
@@ -276,8 +270,16 @@ public class AnsiConsole implements Console {
             this.offset = offset;
         }
 
+        public void setText(String text) {
+            setText(new Span(text));
+        }
+
         public void setText(List<Span> spans) {
             this.spans = spans;
+        }
+
+        public void setText(Span... spans) {
+            setText(Arrays.asList(spans));
         }
 
         @Override
