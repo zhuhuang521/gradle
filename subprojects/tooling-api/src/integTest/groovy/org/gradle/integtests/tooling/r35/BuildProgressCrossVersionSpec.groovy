@@ -26,6 +26,7 @@ import org.gradle.test.fixtures.server.http.MavenHttpRepository
 import org.gradle.test.fixtures.server.http.RepositoryHttpServer
 import org.gradle.tooling.ProjectConnection
 import org.junit.Rule
+import spock.lang.Ignore
 
 @ToolingApiVersion(">=2.5")
 @TargetGradleVersion(">=3.5")
@@ -93,6 +94,7 @@ class BuildProgressCrossVersionSpec extends ToolingApiSpecification {
     }
 
     @LeaksFileHandles
+    @Ignore
     def "generates events for downloading artifacts"() {
         given:
         toolingApi.requireIsolatedUserHome()
