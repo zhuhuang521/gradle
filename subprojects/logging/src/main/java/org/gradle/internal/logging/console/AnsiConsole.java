@@ -39,8 +39,6 @@ public class AnsiConsole implements Console {
     private final boolean forceAnsi;
     private final Cursor writeCursor = new Cursor();
     private final Cursor textCursor = new Cursor();
-    // TODO(ew): Is statusAreaCursor still used? Clean up any ambiguity or tangle between Console cursors and those maintained by text area/labels
-    private final Cursor statusAreaCursor = new Cursor();
 
     public AnsiConsole(Appendable target, Flushable flushable, ColorMap colorMap) {
         this(target, flushable, colorMap, false);
@@ -51,7 +49,7 @@ public class AnsiConsole implements Console {
         this.flushable = flushable;
         this.colorMap = colorMap;
         textArea = new TextAreaImpl(textCursor);
-        statusArea = new StatusAreaImpl(statusAreaCursor);
+        statusArea = new StatusAreaImpl();
         this.forceAnsi = forceAnsi;
     }
 
@@ -182,9 +180,8 @@ public class AnsiConsole implements Console {
         private final Cursor statusAreaPos = new Cursor();
         private boolean isClosed;
 
-        public StatusAreaImpl(Cursor statusAreaPos) {
+        public StatusAreaImpl() {
             // TODO(ew): Way too much work being done in constructor, making this impossible to test
-            this.statusAreaPos.copyFrom(statusAreaPos);
             this.statusAreaPos.row += STATUS_AREA_HEIGHT - 1;
 
             int offset = STATUS_AREA_HEIGHT - 1;
