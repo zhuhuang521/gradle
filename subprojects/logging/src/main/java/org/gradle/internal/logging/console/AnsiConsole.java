@@ -231,9 +231,7 @@ public class AnsiConsole implements Console {
 
         public boolean isOverlappingWith(Cursor cursor) {
             for (RedrawableLabel label : entries) {
-                // Only look at the overlapping rows. Columns are meaningless as we don't keep track how much
-                // overlapping characters was written to each rows.
-                if (cursor.row == label.getWritePosition().row) {
+                if (cursor.row == label.getWritePosition().row && label.getWritePosition().col > cursor.col) {
                     return true;
                 }
             }
