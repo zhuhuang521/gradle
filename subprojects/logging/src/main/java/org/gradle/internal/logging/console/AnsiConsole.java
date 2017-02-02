@@ -18,7 +18,6 @@ package org.gradle.internal.logging.console;
 
 import org.gradle.api.Action;
 import org.gradle.api.UncheckedIOException;
-import org.gradle.internal.logging.text.AbstractLineChoppingStyledTextOutput;
 
 import java.io.Flushable;
 import java.io.IOException;
@@ -201,73 +200,13 @@ public class AnsiConsole implements Console {
         }
     }
 
-    private class TextAreaImpl extends AbstractLineChoppingStyledTextOutput implements TextArea {
-        private static final int CHARS_PER_TAB_STOP = 8;
-        private final Cursor writePos = new Cursor();
-        private final AnsiExecutor ansiExecutor;
-        private final ColorMap colorMap;
-
+    private class TextAreaImpl extends AbstractTextArea {
         public TextAreaImpl(AnsiExecutor ansiExecutor, ColorMap colorMap) {
-            this.ansiExecutor = ansiExecutor;
-            this.colorMap = colorMap;
+            super(ansiExecutor, colorMap);
         }
 
-        public Cursor getWritePosition() {
-            return writePos;
-        }
-
-        public void newLineAdjustment() {
-            writePos.row++;
-        }
-
-        @Override
-        protected void doLineText(final CharSequence text) {
-            if (text.length() == 0) {
-                return;
-            }
-
-            ansiExecutor.writeAt(writePos, new Action<AnsiContext>() {
-                @Override
-                public void execute(AnsiContext ansi) {
-                    ColorMap.Color color = colorMap.getColourFor(getStyle());
-                    ansi.withColor(color, new Action<AnsiContext>() {
-                        @Override
-                        public void execute(AnsiContext ansi) {
-                            String textStr = text.toString();
-                            int pos = 0;
-                            while (pos < text.length()) {
-                                int next = textStr.indexOf('\t', pos);
-                                if (next == pos) {
-                                    int charsToNextStop = CHARS_PER_TAB_STOP - (writePos.col % CHARS_PER_TAB_STOP);
-                                    for(int i = 0; i < charsToNextStop; i++) {
-                                        ansi.a(" ");
-                                    }
-                                    pos++;
-                                } else if (next > pos) {
-                                    ansi.a(textStr.substring(pos, next));
-                                    pos = next;
-                                } else {
-                                    ansi.a(textStr.substring(pos, textStr.length()));
-                                    pos = textStr.length();
-                                }
-                            }
-                        }
-                    });
-                }
-            });
-        }
-
-        @Override
-        protected void doEndLine(CharSequence endOfLine) {
-            ansiExecutor.writeAt(writePos, new Action<AnsiContext>() {
-                @Override
-                public void execute(AnsiContext ansi) {
-                    if (statusArea.isOverlappingWith(writePos)) {
-                        ansi.eraseForward();
-                    }
-                    ansi.newline();
-                }
-            });
+        boolean isOverlappingWith(Cursor position) {
+            return statusArea.isOverlappingWith(position);
         }
     }
 }
