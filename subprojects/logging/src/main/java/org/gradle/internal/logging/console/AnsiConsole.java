@@ -31,7 +31,6 @@ public class AnsiConsole implements Console {
     private final TextAreaImpl textArea;
     private final ColorMap colorMap;
     private final AnsiExecutor ansiExecutor;
-    private final Cursor textCursor = new Cursor();
 
     public AnsiConsole(Appendable target, Flushable flushable, ColorMap colorMap) {
         this(target, flushable, colorMap, false);
@@ -41,7 +40,7 @@ public class AnsiConsole implements Console {
         this.ansiExecutor = new AnsiExecutorImpl(target, forceAnsi);
         this.flushable = flushable;
         this.colorMap = colorMap;
-        textArea = new TextAreaImpl(textCursor);
+        textArea = new TextAreaImpl();
         statusArea = new StatusAreaImpl();
     }
 
@@ -61,7 +60,7 @@ public class AnsiConsole implements Console {
         }
 
         protected void doNewLineAdjustment() {
-            textCursor.row++;
+            textArea.newLineAdjustment();
             statusArea.newLineAdjustment();
         }
     }
@@ -127,7 +126,7 @@ public class AnsiConsole implements Console {
         public void close() {
             isClosed = true;
 
-            scrollConsole();
+            scrollConsole(textArea.getWritePosition());
 
             // Clear progress area
             for (RedrawableLabel label : entries) {
@@ -158,7 +157,7 @@ public class AnsiConsole implements Console {
                 return;
             }
 
-            scrollConsole();
+            scrollConsole(textArea.getWritePosition());
 
             // Redraw every entries of this area
             for (RedrawableLabel label : entries) {
@@ -168,14 +167,14 @@ public class AnsiConsole implements Console {
             parkCursor();
         }
 
-        private void scrollConsole() {
+        private void scrollConsole(Cursor upperComponentPos) {
             // Calculate how many rows of the status area overlap with the text area
-            int numberOfOverlappedRows = Math.min(statusAreaPos.row - textCursor.row + 1, STATUS_AREA_HEIGHT);
+            int numberOfOverlappedRows = Math.min(statusAreaPos.row - upperComponentPos.row + 1, STATUS_AREA_HEIGHT);
 
-            // If textCursor is on a status line but nothing was written, this means a new line was just written. While
+            // If upperComponentPos is on a status line but nothing was written, this means a new line was just written. While
             // we wait for additional text, let's assume this row doesn't count as overlapping and use it as a status
             // line. This avoid having an one line gab between the text area and the status area.
-            if (textCursor.col == 0) {
+            if (upperComponentPos.col == 0) {
                 numberOfOverlappedRows--;
             }
 
@@ -203,10 +202,14 @@ public class AnsiConsole implements Console {
 
     private class TextAreaImpl extends AbstractLineChoppingStyledTextOutput implements TextArea {
         private static final int CHARS_PER_TAB_STOP = 8;
-        private final Cursor writePos;
+        private final Cursor writePos = new Cursor();
 
-        public TextAreaImpl(Cursor writePos) {
-            this.writePos = writePos;
+        public Cursor getWritePosition() {
+            return writePos;
+        }
+
+        public void newLineAdjustment() {
+            writePos.row++;
         }
 
         @Override
