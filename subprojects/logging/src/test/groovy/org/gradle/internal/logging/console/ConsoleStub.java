@@ -24,10 +24,20 @@ import java.util.List;
 public class ConsoleStub implements Console {
     private final TextAreaImpl mainArea = new TextAreaImpl();
 
-    public Label getStatusBar() {
-        return new Label() {
+    public StyledLabel getStatusBar() {
+        return new StyledLabel() {
             @Override
             public void setText(List<Span> spans) {
+
+            }
+
+            @Override
+            public void setText(Span... spans) {
+
+            }
+
+            @Override
+            public void setText(String text) {
 
             }
         };
@@ -37,18 +47,28 @@ public class ConsoleStub implements Console {
     public BuildProgressArea getBuildProgressArea() {
         return new BuildProgressArea() {
             @Override
-            public Label getStatusBar() {
-                return new Label() {
+            public StyledLabel getStatusBar() {
+                return new StyledLabel() {
+                    @Override
+                    public void setText(String text) {
+
+                    }
+
                     @Override
                     public void setText(List<Span> spans) {
                         // TODO(ew): testable impl
+                    }
+
+                    @Override
+                    public void setText(Span... spans) {
+
                     }
                 };
             }
 
             @Override
-            public List<Label> getBuildProgressLabels() {
-                return new ArrayList<Label>();
+            public List<StyledLabel> getBuildProgressLabels() {
+                return new ArrayList<StyledLabel>();
             }
 
             @Override

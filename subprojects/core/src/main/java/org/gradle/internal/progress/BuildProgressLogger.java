@@ -20,9 +20,6 @@ import com.google.common.annotations.VisibleForTesting;
 import org.gradle.internal.logging.progress.ProgressLogger;
 import org.gradle.internal.logging.progress.ProgressLoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class BuildProgressLogger implements LoggerProvider {
     public static final String INITIALIZATION_PHASE_DESCRIPTION = "INITIALIZATION PHASE";
     public static final String INITIALIZATION_PHASE_SHORT_DESCRIPTION = "INITIALIZING";
@@ -37,12 +34,9 @@ public class BuildProgressLogger implements LoggerProvider {
     public static final String PROGRESS_BAR_SUFFIX = ">";
 
     private final ProgressLoggerProvider loggerProvider;
+    private boolean taskGraphPopulated;
 
     private ProgressLogger buildProgress;
-    // TODO(ew): probably move configuration progress logging back here
-    private ProgressLogger configurationProgress;
-    private Map<String, ProgressLogger> projectConfigurationProgress = new HashMap<String, ProgressLogger>();
-
     private ProgressFormatter buildProgressFormatter;
 
     public BuildProgressLogger(ProgressLoggerFactory progressLoggerFactory) {
@@ -70,12 +64,13 @@ public class BuildProgressLogger implements LoggerProvider {
     public void beforeEvaluate(String projectPath) {}
 
     public void afterEvaluate(String projectPath) {
-        // FIXME(ew): this can cause tasks progress to increment causing IllegalStateException if a configuration must be resolved at execution time
-        // see ConfigurationOnDemandIntegrationTest.may configure project at execution time
-        buildProgress.progress(buildProgressFormatter.incrementAndGetProgress());
+        if (!taskGraphPopulated) {
+            buildProgress.progress(buildProgressFormatter.incrementAndGetProgress());
+        }
     }
 
     public void graphPopulated(int totalTasks) {
+        taskGraphPopulated = true;
         buildProgress.completed();
         buildProgressFormatter = newProgressBar(EXECUTION_PHASE_SHORT_DESCRIPTION, totalTasks);
         buildProgress = loggerProvider.start(EXECUTION_PHASE_DESCRIPTION, buildProgressFormatter.getProgress());
