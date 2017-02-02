@@ -118,7 +118,6 @@ class BuildProgressLoggerTest extends Specification {
         buildProgressLogger.afterEvaluate(":bar")
 
         then:
-        1 * buildProgress.progress(_)
         0 * _
     }
 

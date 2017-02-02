@@ -20,6 +20,9 @@ import com.google.common.annotations.VisibleForTesting;
 import org.gradle.internal.logging.progress.ProgressLogger;
 import org.gradle.internal.logging.progress.ProgressLoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class BuildProgressLogger implements LoggerProvider {
     public static final String INITIALIZATION_PHASE_DESCRIPTION = "INITIALIZATION PHASE";
     public static final String INITIALIZATION_PHASE_SHORT_DESCRIPTION = "INITIALIZING";
@@ -32,15 +35,15 @@ public class BuildProgressLogger implements LoggerProvider {
     public static final char PROGRESS_BAR_COMPLETE_CHAR = '=';
     public static final char PROGRESS_BAR_INCOMPLETE_CHAR = '-';
     public static final String PROGRESS_BAR_SUFFIX = ">";
-    public static final String CONFIGURING_PROJECTS = "Configuring projects";
 
     private final ProgressLoggerProvider loggerProvider;
 
     private ProgressLogger buildProgress;
-    private ProgressFormatter buildProgressFormatter;
+    // TODO(ew): probably move configuration progress logging back here
+    private ProgressLogger configurationProgress;
+    private Map<String, ProgressLogger> projectConfigurationProgress = new HashMap<String, ProgressLogger>();
 
-    // TODO(ew): consider if/how to maintain a separate overall build progress from progress of workers
-    // We want to decouple this from DefaultGradleLauncherFactory (it should only know about one BuildProgressLogger)
+    private ProgressFormatter buildProgressFormatter;
 
     public BuildProgressLogger(ProgressLoggerFactory progressLoggerFactory) {
         this(new ProgressLoggerProvider(progressLoggerFactory, BuildProgressLogger.class));
@@ -51,8 +54,6 @@ public class BuildProgressLogger implements LoggerProvider {
     }
 
     public void buildStarted() {
-        // TODO(ew): consider how to show buildSrc progress — it seems like a separate build
-        // TODO(ew): test this with composite builds
         buildProgressFormatter = newProgressBar(INITIALIZATION_PHASE_SHORT_DESCRIPTION, 1);
         buildProgress = loggerProvider.start(INITIALIZATION_PHASE_DESCRIPTION, buildProgressFormatter.getProgress());
     }
@@ -66,10 +67,11 @@ public class BuildProgressLogger implements LoggerProvider {
         buildProgress = loggerProvider.start(CONFIGURATION_PHASE_DESCRIPTION, buildProgressFormatter.getProgress());
     }
 
-    // TODO(ew): show work in progress in overall build status
     public void beforeEvaluate(String projectPath) {}
 
     public void afterEvaluate(String projectPath) {
+        // FIXME(ew): this can cause tasks progress to increment causing IllegalStateException if a configuration must be resolved at execution time
+        // see ConfigurationOnDemandIntegrationTest.may configure project at execution time
         buildProgress.progress(buildProgressFormatter.incrementAndGetProgress());
     }
 
@@ -79,7 +81,6 @@ public class BuildProgressLogger implements LoggerProvider {
         buildProgress = loggerProvider.start(EXECUTION_PHASE_DESCRIPTION, buildProgressFormatter.getProgress());
     }
 
-    // TODO(ew): show work-in-progress in overall build status
     public void beforeExecute() {}
 
     public void afterExecute() {

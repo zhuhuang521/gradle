@@ -20,7 +20,6 @@ import org.gradle.api.ProjectEvaluationListener;
 import org.gradle.api.ProjectState;
 import org.gradle.internal.logging.progress.ProgressLogger;
 import org.gradle.internal.logging.progress.ProgressLoggerFactory;
-import org.gradle.internal.progress.LoggerProvider;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,11 +27,9 @@ import java.util.Map;
 public class ProjectEvaluationLogger implements ProjectEvaluationListener {
     private final Map<String, ProgressLogger> currentProjects = new HashMap<String, ProgressLogger>();
     private final ProgressLoggerFactory progressLoggerFactory;
-    private final LoggerProvider parentLoggerProvider;
 
-    public ProjectEvaluationLogger(ProgressLoggerFactory progressLoggerFactory, LoggerProvider parentLoggerProvider) {
+    public ProjectEvaluationLogger(ProgressLoggerFactory progressLoggerFactory) {
         this.progressLoggerFactory = progressLoggerFactory;
-        this.parentLoggerProvider = parentLoggerProvider;
     }
 
     @Override
@@ -41,7 +38,7 @@ public class ProjectEvaluationLogger implements ProjectEvaluationListener {
         // see ConfigurationOnDemandIntegrationTest
         final String projectPath = project.getPath().equals(":") ? "root project" : project.getPath();
         ProgressLogger currentTask = progressLoggerFactory
-            .newOperation(ProjectEvaluationLogger.class, parentLoggerProvider.getLogger())
+            .newOperation(ProjectEvaluationLogger.class)
             .start("Configuring ".concat(projectPath), projectPath);
         currentProjects.put(project.getPath(), currentTask);
     }
