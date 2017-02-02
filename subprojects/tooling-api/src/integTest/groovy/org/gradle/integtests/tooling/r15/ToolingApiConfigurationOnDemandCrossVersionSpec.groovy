@@ -19,7 +19,6 @@ package org.gradle.integtests.tooling.r15
 import org.gradle.integtests.tooling.fixture.TargetGradleVersion
 import org.gradle.integtests.tooling.fixture.ToolingApiSpecification
 import org.gradle.tooling.model.GradleProject
-import spock.lang.Ignore
 
 @TargetGradleVersion(">=1.5")
 class ToolingApiConfigurationOnDemandCrossVersionSpec extends ToolingApiSpecification {
@@ -28,7 +27,6 @@ class ToolingApiConfigurationOnDemandCrossVersionSpec extends ToolingApiSpecific
         file("gradle.properties") << "org.gradle.configureondemand=true"
     }
 
-    @Ignore
     def "building model evaluates all projects regardless of configuration on demand mode"() {
         given:
         file("settings.gradle") << "include 'api', 'impl', 'other'"

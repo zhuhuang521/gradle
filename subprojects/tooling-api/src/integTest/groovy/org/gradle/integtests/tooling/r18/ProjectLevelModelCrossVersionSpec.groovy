@@ -19,7 +19,6 @@ package org.gradle.integtests.tooling.r18
 import org.gradle.integtests.tooling.fixture.TargetGradleVersion
 import org.gradle.integtests.tooling.fixture.ToolingApiSpecification
 import org.gradle.integtests.tooling.r16.CustomModel
-import spock.lang.Ignore
 
 class ProjectLevelModelCrossVersionSpec extends ToolingApiSpecification {
     def setup() {
@@ -66,7 +65,6 @@ class CustomPlugin implements Plugin<Project> {
     }
 
     @TargetGradleVersion(">=1.8")
-    @Ignore
     def "can use build model to request models for individual projects"() {
         when:
         Map<String, CustomModel> result = withConnection { connection -> connection.action(new UseGradleBuildToFetchProjectModel()).run() }
