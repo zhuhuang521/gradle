@@ -30,18 +30,18 @@ public class AnsiConsole implements Console {
     private final StatusAreaImpl statusArea;
     private final TextAreaImpl textArea;
     private final ColorMap colorMap;
-    private final AnsiExecutor ansiExecutor;
 
     public AnsiConsole(Appendable target, Flushable flushable, ColorMap colorMap) {
         this(target, flushable, colorMap, false);
     }
 
     public AnsiConsole(Appendable target, Flushable flushable, ColorMap colorMap, boolean forceAnsi) {
-        this.ansiExecutor = new AnsiExecutorImpl(target, forceAnsi);
         this.flushable = flushable;
         this.colorMap = colorMap;
-        textArea = new TextAreaImpl();
-        statusArea = new StatusAreaImpl();
+
+        AnsiExecutor ansiExecutor = new AnsiExecutorImpl(target, forceAnsi);
+        textArea = new TextAreaImpl(ansiExecutor);
+        statusArea = new StatusAreaImpl(ansiExecutor);
     }
 
     @Override
@@ -88,9 +88,12 @@ public class AnsiConsole implements Console {
 
         private final List<RedrawableLabel> buildProgressLabels = new ArrayList<RedrawableLabel>(BUILD_PROGRESS_LABEL_COUNT);
         private final Cursor statusAreaPos = new Cursor();
+        private final AnsiExecutor ansiExecutor;
         private boolean isClosed;
 
-        public StatusAreaImpl() {
+        public StatusAreaImpl(AnsiExecutor ansiExecutor) {
+            this.ansiExecutor = ansiExecutor;
+
             // TODO(ew): Way too much work being done in constructor, making this impossible to test
             this.statusAreaPos.row += STATUS_AREA_HEIGHT - 1;
 
@@ -203,6 +206,11 @@ public class AnsiConsole implements Console {
     private class TextAreaImpl extends AbstractLineChoppingStyledTextOutput implements TextArea {
         private static final int CHARS_PER_TAB_STOP = 8;
         private final Cursor writePos = new Cursor();
+        private final AnsiExecutor ansiExecutor;
+
+        public TextAreaImpl(AnsiExecutor ansiExecutor) {
+            this.ansiExecutor = ansiExecutor;
+        }
 
         public Cursor getWritePosition() {
             return writePos;
