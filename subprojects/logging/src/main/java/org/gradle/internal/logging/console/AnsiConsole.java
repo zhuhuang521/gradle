@@ -29,7 +29,6 @@ public class AnsiConsole implements Console {
     private final Flushable flushable;
     private final StatusAreaImpl statusArea;
     private final TextAreaImpl textArea;
-    private final ColorMap colorMap;
 
     public AnsiConsole(Appendable target, Flushable flushable, ColorMap colorMap) {
         this(target, flushable, colorMap, false);
@@ -37,11 +36,10 @@ public class AnsiConsole implements Console {
 
     public AnsiConsole(Appendable target, Flushable flushable, ColorMap colorMap, boolean forceAnsi) {
         this.flushable = flushable;
-        this.colorMap = colorMap;
 
         AnsiExecutor ansiExecutor = new AnsiExecutorImpl(target, forceAnsi);
-        textArea = new TextAreaImpl(ansiExecutor);
-        statusArea = new StatusAreaImpl(ansiExecutor);
+        textArea = new TextAreaImpl(ansiExecutor, colorMap);
+        statusArea = new StatusAreaImpl(ansiExecutor, colorMap);
     }
 
     @Override
@@ -91,7 +89,7 @@ public class AnsiConsole implements Console {
         private final AnsiExecutor ansiExecutor;
         private boolean isClosed;
 
-        public StatusAreaImpl(AnsiExecutor ansiExecutor) {
+        public StatusAreaImpl(AnsiExecutor ansiExecutor, ColorMap colorMap) {
             this.ansiExecutor = ansiExecutor;
 
             // TODO(ew): Way too much work being done in constructor, making this impossible to test
@@ -207,9 +205,11 @@ public class AnsiConsole implements Console {
         private static final int CHARS_PER_TAB_STOP = 8;
         private final Cursor writePos = new Cursor();
         private final AnsiExecutor ansiExecutor;
+        private final ColorMap colorMap;
 
-        public TextAreaImpl(AnsiExecutor ansiExecutor) {
+        public TextAreaImpl(AnsiExecutor ansiExecutor, ColorMap colorMap) {
             this.ansiExecutor = ansiExecutor;
+            this.colorMap = colorMap;
         }
 
         public Cursor getWritePosition() {
