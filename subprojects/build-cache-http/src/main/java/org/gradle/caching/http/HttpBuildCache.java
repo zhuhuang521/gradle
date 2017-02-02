@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package org.gradle.caching.internal;
+package org.gradle.caching.http;
 
-import org.gradle.StartParameter;
-import org.gradle.api.Incubating;
-import org.gradle.caching.BuildCacheService;
+import org.gradle.caching.configuration.BuildCache;
 
-/**
- * Factory interface for build caching.
- *
- * @since 3.3
- */
-@Incubating
-public interface BuildCacheFactory {
-    BuildCacheService createCache(StartParameter startParameter);
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+
+public interface HttpBuildCache extends BuildCache {
+    void setUrl(String url);
+    void setUrl(URL url) throws URISyntaxException;
+    void setUrl(URI url);
 }
