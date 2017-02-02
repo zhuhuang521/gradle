@@ -73,6 +73,7 @@ public class DefaultGradleLauncherFactory implements GradleLauncherFactory {
         // Register default loggers
         buildProgressLogger = new BuildProgressLogger(progressLoggerFactory);
         listenerManager.addListener(new BuildProgressFilter(buildProgressLogger));
+        listenerManager.useLogger(new ProjectEvaluationLogger(progressLoggerFactory));
         listenerManager.useLogger(new DependencyResolutionLogger(progressLoggerFactory));
     }
 
@@ -135,7 +136,6 @@ public class DefaultGradleLauncherFactory implements GradleLauncherFactory {
         LoggerProvider loggerProvider = (parent == null) ? buildProgressLogger : LoggerProvider.NO_OP;
         listenerManager.useLogger(new TaskExecutionLogger(serviceRegistry.get(ProgressLoggerFactory.class), loggerProvider));
         if (parent == null) {
-            listenerManager.useLogger(new ProjectEvaluationLogger(serviceRegistry.get(ProgressLoggerFactory.class), loggerProvider));
             listenerManager.useLogger(new BuildLogger(Logging.getLogger(BuildLogger.class), serviceRegistry.get(StyledTextOutputFactory.class), startParameter, requestMetaData));
         }
 
