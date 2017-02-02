@@ -133,7 +133,7 @@ public abstract class AbstractStatusArea implements BuildProgressArea {
         ansiExecutor.positionCursorAt(Cursor.newBottomLeft());
     }
 
-    private /*static*/ Action<AnsiContext> newLines(final int numberOfNewLines) {
+    private static Action<AnsiContext> newLines(final int numberOfNewLines) {
         return new Action<AnsiContext>() {
             @Override
             public void execute(AnsiContext ansi) {
