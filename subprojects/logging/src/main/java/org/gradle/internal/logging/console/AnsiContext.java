@@ -17,9 +17,13 @@
 package org.gradle.internal.logging.console;
 
 import org.gradle.api.Action;
+import org.gradle.internal.logging.text.Style;
+import org.gradle.internal.logging.text.StyledTextOutput;
 
 public interface AnsiContext {
     AnsiContext withColor(ColorMap.Color color, Action<? super AnsiContext> action);
+    AnsiContext withStyle(Style style, Action<? super AnsiContext> action);
+    AnsiContext withStyle(StyledTextOutput.Style style, Action<? super AnsiContext> action);
     AnsiContext a(CharSequence value);
     AnsiContext newline();
     AnsiContext eraseForward();

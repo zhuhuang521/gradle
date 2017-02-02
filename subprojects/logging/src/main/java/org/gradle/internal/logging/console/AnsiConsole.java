@@ -33,9 +33,9 @@ public class AnsiConsole implements Console {
     public AnsiConsole(Appendable target, Flushable flushable, ColorMap colorMap, boolean forceAnsi) {
         this.flushable = flushable;
 
-        AnsiExecutor ansiExecutor = new AnsiExecutorImpl(target, forceAnsi);
-        textArea = new TextAreaImpl(ansiExecutor, colorMap);
-        statusArea = new StatusAreaImpl(ansiExecutor, colorMap);
+        AnsiExecutor ansiExecutor = new AnsiExecutorImpl(target, colorMap, forceAnsi);
+        textArea = new TextAreaImpl(ansiExecutor);
+        statusArea = new StatusAreaImpl(ansiExecutor);
     }
 
     @Override
@@ -49,8 +49,8 @@ public class AnsiConsole implements Console {
     }
 
     private class AnsiExecutorImpl extends AbstractAnsiExecutor {
-        AnsiExecutorImpl(Appendable target, boolean forceAnsi) {
-            super(target, forceAnsi);
+        AnsiExecutorImpl(Appendable target, ColorMap colorMap, boolean forceAnsi) {
+            super(target, colorMap, forceAnsi);
         }
 
         protected void doNewLineAdjustment() {
@@ -75,8 +75,8 @@ public class AnsiConsole implements Console {
     }
 
     private class StatusAreaImpl extends AbstractStatusArea {
-        public StatusAreaImpl(AnsiExecutor ansiExecutor, ColorMap colorMap) {
-            super(ansiExecutor, colorMap);
+        public StatusAreaImpl(AnsiExecutor ansiExecutor) {
+            super(ansiExecutor);
         }
 
         int getNumberOfOverlappingRows() {
@@ -95,8 +95,8 @@ public class AnsiConsole implements Console {
     }
 
     private class TextAreaImpl extends AbstractTextArea {
-        public TextAreaImpl(AnsiExecutor ansiExecutor, ColorMap colorMap) {
-            super(ansiExecutor, colorMap);
+        public TextAreaImpl(AnsiExecutor ansiExecutor) {
+            super(ansiExecutor);
         }
 
         boolean isOverlappingWith(Cursor position) {

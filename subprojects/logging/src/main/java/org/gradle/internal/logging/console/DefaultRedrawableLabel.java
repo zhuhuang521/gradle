@@ -26,14 +26,12 @@ import java.util.List;
 public class DefaultRedrawableLabel implements RedrawableLabel {
     private final Cursor writePos = new Cursor();
     private final AnsiExecutor ansiExecutor;
-    private final ColorMap colorMap;
     private final int offset;
     private List<Span> spans = Collections.EMPTY_LIST;
     private List<Span> writtenSpans = Collections.EMPTY_LIST;
 
-    DefaultRedrawableLabel(AnsiExecutor ansiExecutor, ColorMap colorMap, int offset) {
+    DefaultRedrawableLabel(AnsiExecutor ansiExecutor, int offset) {
         this.ansiExecutor = ansiExecutor;
-        this.colorMap = colorMap;
         this.offset = offset;
     }
 
@@ -69,8 +67,7 @@ public class DefaultRedrawableLabel implements RedrawableLabel {
             @Override
             public void execute(AnsiContext ansi) {
                 for (Span span : spans) {
-                    ColorMap.Color color = colorMap.getColourFor(span.getStyle());
-                    ansi.withColor(color, writeText(span.getText()));
+                    ansi.withStyle(span.getStyle(), writeText(span.getText()));
                 }
 
                 // Remove what ever may be at the end of the line

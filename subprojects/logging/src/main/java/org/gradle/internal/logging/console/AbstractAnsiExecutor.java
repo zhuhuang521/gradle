@@ -19,16 +19,20 @@ package org.gradle.internal.logging.console;
 import org.fusesource.jansi.Ansi;
 import org.gradle.api.Action;
 import org.gradle.api.UncheckedIOException;
+import org.gradle.internal.logging.text.Style;
+import org.gradle.internal.logging.text.StyledTextOutput;
 
 import java.io.IOException;
 
 public abstract class AbstractAnsiExecutor implements AnsiExecutor {
     private final Appendable target;
+    private final ColorMap colorMap;
     private final boolean forceAnsi;
     private final Cursor writeCursor = new Cursor();
 
-    public AbstractAnsiExecutor(Appendable target, boolean forceAnsi) {
+    public AbstractAnsiExecutor(Appendable target, ColorMap colorMap, boolean forceAnsi) {
         this.target = target;
+        this.colorMap = colorMap;
         this.forceAnsi = forceAnsi;
     }
 
@@ -36,7 +40,7 @@ public abstract class AbstractAnsiExecutor implements AnsiExecutor {
     public void writeAt(Cursor writePos, Action<? super AnsiContext> action) {
         Ansi ansi = create();
         positionCursorAt(writePos, ansi);
-        action.execute(new AnsiContextImpl(ansi, writePos));
+        action.execute(new AnsiContextImpl(ansi, colorMap, writePos));
         write(ansi);
     }
 
@@ -113,10 +117,12 @@ public abstract class AbstractAnsiExecutor implements AnsiExecutor {
 
     private class AnsiContextImpl implements AnsiContext {
         private final Ansi delegate;
+        private final ColorMap colorMap;
         private final Cursor writePos;
 
-        AnsiContextImpl(Ansi delegate, Cursor writePos) {
+        AnsiContextImpl(Ansi delegate, ColorMap colorMap, Cursor writePos) {
             this.delegate = delegate;
+            this.colorMap = colorMap;
             this.writePos = writePos;
         }
 
@@ -126,6 +132,16 @@ public abstract class AbstractAnsiExecutor implements AnsiExecutor {
             action.execute(this);
             color.off(delegate);
             return this;
+        }
+
+        @Override
+        public AnsiContext withStyle(Style style, Action<? super AnsiContext> action) {
+            return withColor(colorMap.getColourFor(style), action);
+        }
+
+        @Override
+        public AnsiContext withStyle(StyledTextOutput.Style style, Action<? super AnsiContext> action) {
+            return withColor(colorMap.getColourFor(style), action);
         }
 
         @Override

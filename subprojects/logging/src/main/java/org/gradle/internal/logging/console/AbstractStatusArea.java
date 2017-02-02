@@ -31,7 +31,7 @@ public abstract class AbstractStatusArea implements BuildProgressArea {
     private final AnsiExecutor ansiExecutor;
     private boolean isClosed;
 
-    public AbstractStatusArea(AnsiExecutor ansiExecutor, ColorMap colorMap) {
+    public AbstractStatusArea(AnsiExecutor ansiExecutor) {
         this.ansiExecutor = ansiExecutor;
 
         // TODO(ew): Way too much work being done in constructor, making this impossible to test
@@ -39,16 +39,16 @@ public abstract class AbstractStatusArea implements BuildProgressArea {
 
         int offset = STATUS_AREA_HEIGHT - 1;
 
-        entries.add(new DefaultRedrawableLabel(ansiExecutor, colorMap, offset--));
+        entries.add(new DefaultRedrawableLabel(ansiExecutor, offset--));
 
         for (int i = 0; i < BUILD_PROGRESS_LABEL_COUNT; ++i) {
-            RedrawableLabel label = new DefaultRedrawableLabel(ansiExecutor, colorMap, offset--);
+            RedrawableLabel label = new DefaultRedrawableLabel(ansiExecutor, offset--);
             entries.add(label);
             buildProgressLabels.add(label);
         }
 
         // Parking space for the write cursor
-        entries.add(new DefaultRedrawableLabel(ansiExecutor, colorMap, offset--));
+        entries.add(new DefaultRedrawableLabel(ansiExecutor, offset--));
     }
 
     @Override

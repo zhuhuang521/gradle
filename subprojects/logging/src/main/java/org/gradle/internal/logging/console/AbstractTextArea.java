@@ -23,11 +23,9 @@ public abstract class AbstractTextArea extends AbstractLineChoppingStyledTextOut
     private static final int CHARS_PER_TAB_STOP = 8;
     private final Cursor writePos = new Cursor();
     private final AnsiExecutor ansiExecutor;
-    private final ColorMap colorMap;
 
-    public AbstractTextArea(AnsiExecutor ansiExecutor, ColorMap colorMap) {
+    public AbstractTextArea(AnsiExecutor ansiExecutor) {
         this.ansiExecutor = ansiExecutor;
-        this.colorMap = colorMap;
     }
 
     public Cursor getWritePosition() {
@@ -47,8 +45,7 @@ public abstract class AbstractTextArea extends AbstractLineChoppingStyledTextOut
         ansiExecutor.writeAt(writePos, new Action<AnsiContext>() {
             @Override
             public void execute(AnsiContext ansi) {
-                ColorMap.Color color = colorMap.getColourFor(getStyle());
-                ansi.withColor(color, new Action<AnsiContext>() {
+                ansi.withStyle(getStyle(), new Action<AnsiContext>() {
                     @Override
                     public void execute(AnsiContext ansi) {
                         String textStr = text.toString();
