@@ -16,6 +16,7 @@
 
 package org.gradle.internal.logging.console;
 
+import org.gradle.api.Action;
 import org.gradle.api.UncheckedIOException;
 
 import java.io.Flushable;
@@ -23,24 +24,29 @@ import java.io.IOException;
 
 public class AnsiConsole implements Console {
     private final Flushable flushable;
-    private final StatusAreaImpl statusArea;
-    private final TextAreaImpl textArea;
+    private final DefaultStatusArea statusArea;
+    private final DefaultTextArea textArea;
+    private final AnsiExecutor ansiExecutor;
 
     public AnsiConsole(Appendable target, Flushable flushable, ColorMap colorMap) {
         this(target, flushable, colorMap, false);
     }
 
     public AnsiConsole(Appendable target, Flushable flushable, ColorMap colorMap, boolean forceAnsi) {
-        this.flushable = flushable;
+        this(target, flushable, colorMap, new DefaultAnsiFactory(forceAnsi));
+    }
 
-        AnsiExecutor ansiExecutor = new AnsiExecutorImpl(target, colorMap, forceAnsi);
-        textArea = new TextAreaImpl(ansiExecutor);
-        statusArea = new StatusAreaImpl(ansiExecutor);
+    public AnsiConsole(Appendable target, Flushable flushable, ColorMap colorMap, AnsiFactory factory) {
+        this.flushable = flushable;
+        this.ansiExecutor = new DefaultAnsiExecutor(target, colorMap, factory, Cursor.newBottomLeft(), new Listener());
+
+        textArea = new DefaultTextArea(ansiExecutor);
+        statusArea = new DefaultStatusArea(ansiExecutor);
     }
 
     @Override
     public void flush() {
-        statusArea.redraw();
+        redraw();
         try {
             flushable.flush();
         } catch (IOException e) {
@@ -48,15 +54,21 @@ public class AnsiConsole implements Console {
         }
     }
 
-    private class AnsiExecutorImpl extends AbstractAnsiExecutor {
-        AnsiExecutorImpl(Appendable target, ColorMap colorMap, boolean forceAnsi) {
-            super(target, colorMap, forceAnsi);
+    private void redraw() {
+        // Calculate how many rows of the status area overlap with the text area
+        int numberOfOverlappedRows = statusArea.getWritePosition().row - textArea.getWritePosition().row;
+
+        // If textArea is on a status line but nothing was written, this means a new line was just written. While
+        // we wait for additional text, we assume this row doesn't count as overlapping and use it as a status
+        // line. In the opposite case, we want to scroll the progress area one more line. This avoid having an one
+        // line gap between the text area and the status area.
+        if (textArea.getWritePosition().col > 0) {
+            numberOfOverlappedRows++;
         }
 
-        protected void doNewLineAdjustment() {
-            textArea.newLineAdjustment();
-            statusArea.newLineAdjustment();
-        }
+        statusArea.scroll(numberOfOverlappedRows);
+
+        statusArea.redraw();
     }
 
     @Override
@@ -74,33 +86,22 @@ public class AnsiConsole implements Console {
         return textArea;
     }
 
-    private class StatusAreaImpl extends AbstractStatusArea {
-        public StatusAreaImpl(AnsiExecutor ansiExecutor) {
-            super(ansiExecutor);
-        }
-
-        int getNumberOfOverlappingRows() {
-            // Calculate how many rows of the status area overlap with the text area
-            int numberOfOverlappedRows = Math.min(getWritePosition().row - textArea.getWritePosition().row + 1, getHeight());
-
-            // If upperComponentPos is on a status line but nothing was written, this means a new line was just written. While
-            // we wait for additional text, let's assume this row doesn't count as overlapping and use it as a status
-            // line. This avoid having an one line gab between the text area and the status area.
-            if (textArea.getWritePosition().col == 0) {
-                numberOfOverlappedRows--;
+    private class Listener implements DefaultAnsiExecutor.NewLineListener {
+        @Override
+        public void beforeNewLineWritten(Cursor writeCursor) {
+            if (writeCursor.row == 0) {
+                textArea.newLineAdjustment();
+                statusArea.newLineAdjustment();
             }
 
-            return numberOfOverlappedRows;
-        }
-    }
-
-    private class TextAreaImpl extends AbstractTextArea {
-        public TextAreaImpl(AnsiExecutor ansiExecutor) {
-            super(ansiExecutor);
-        }
-
-        boolean isOverlappingWith(Cursor position) {
-            return statusArea.isOverlappingWith(position);
+            if (statusArea.isOverlappingWith(writeCursor)) {
+                ansiExecutor.writeAt(writeCursor, new Action<AnsiContext>() {
+                    @Override
+                    public void execute(AnsiContext ansi) {
+                        ansi.eraseForward();
+                    }
+                });
+            }
         }
     }
 }

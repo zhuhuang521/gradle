@@ -24,21 +24,33 @@ import org.gradle.internal.logging.text.StyledTextOutput;
 
 import java.io.IOException;
 
-public abstract class AbstractAnsiExecutor implements AnsiExecutor {
+public class DefaultAnsiExecutor implements AnsiExecutor {
+    private static final NewLineListener NO_OP_LISTENER = new NoOpListener();
     private final Appendable target;
     private final ColorMap colorMap;
-    private final boolean forceAnsi;
-    private final Cursor writeCursor = new Cursor();
+    private final AnsiFactory factory;
+    private final NewLineListener listener;
+    private final Cursor writeCursor;
 
-    public AbstractAnsiExecutor(Appendable target, ColorMap colorMap, boolean forceAnsi) {
+    public DefaultAnsiExecutor(Appendable target, ColorMap colorMap, AnsiFactory factory) {
+        this(target, colorMap, factory, new Cursor());
+    }
+
+    public DefaultAnsiExecutor(Appendable target, ColorMap colorMap, AnsiFactory factory, Cursor writeCursor) {
+        this(target, colorMap, factory, writeCursor, NO_OP_LISTENER);
+    }
+
+    public DefaultAnsiExecutor(Appendable target, ColorMap colorMap, AnsiFactory factory, Cursor writeCursor, NewLineListener listener) {
         this.target = target;
         this.colorMap = colorMap;
-        this.forceAnsi = forceAnsi;
+        this.factory = factory;
+        this.writeCursor = writeCursor;
+        this.listener = listener;
     }
 
     @Override
     public void writeAt(Cursor writePos, Action<? super AnsiContext> action) {
-        Ansi ansi = create();
+        Ansi ansi = factory.create();
         positionCursorAt(writePos, ansi);
         action.execute(new AnsiContextImpl(ansi, colorMap, writePos));
         write(ansi);
@@ -46,7 +58,7 @@ public abstract class AbstractAnsiExecutor implements AnsiExecutor {
 
     @Override
     public void positionCursorAt(Cursor position) {
-        Ansi ansi = create();
+        Ansi ansi = factory.create();
         positionCursorAt(position, ansi);
         write(ansi);
     }
@@ -65,13 +77,9 @@ public abstract class AbstractAnsiExecutor implements AnsiExecutor {
             writeCursor.row--;
         } else {
             writeCursor.row = 0;
-
-            doNewLineAdjustment();
         }
         cursor.copyFrom(writeCursor);
     }
-
-    protected abstract void doNewLineAdjustment();
 
     private void positionCursorAt(Cursor position, Ansi ansi) {
         if (writeCursor.row == position.row) {
@@ -99,19 +107,22 @@ public abstract class AbstractAnsiExecutor implements AnsiExecutor {
         writeCursor.copyFrom(position);
     }
 
-    private Ansi create() {
-        if (forceAnsi) {
-            return new Ansi();
-        } else {
-            return Ansi.ansi();
-        }
-    }
-
     private void write(Ansi ansi) {
         try {
             target.append(ansi.toString());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    interface NewLineListener {
+        void beforeNewLineWritten(Cursor writeCursor);
+    }
+
+    private static class NoOpListener implements NewLineListener {
+        @Override
+        public void beforeNewLineWritten(Cursor writeCursor) {
+
         }
     }
 
@@ -153,6 +164,7 @@ public abstract class AbstractAnsiExecutor implements AnsiExecutor {
 
         @Override
         public AnsiContext newline() {
+            listener.beforeNewLineWritten(writeCursor);
             delegate.newline();
             newLineWritten(writePos);
             return this;

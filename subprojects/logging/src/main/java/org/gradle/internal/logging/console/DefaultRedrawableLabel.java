@@ -24,14 +24,15 @@ import java.util.Collections;
 import java.util.List;
 
 public class DefaultRedrawableLabel implements RedrawableLabel {
-    private final Cursor writePos = new Cursor();
+    private final Cursor writePos;
     private final AnsiExecutor ansiExecutor;
     private final int offset;
     private List<Span> spans = Collections.EMPTY_LIST;
     private List<Span> writtenSpans = Collections.EMPTY_LIST;
 
-    DefaultRedrawableLabel(AnsiExecutor ansiExecutor, int offset) {
+    DefaultRedrawableLabel(AnsiExecutor ansiExecutor, Cursor writePos, int offset) {
         this.ansiExecutor = ansiExecutor;
+        this.writePos = writePos;
         this.offset = offset;
     }
 
@@ -62,7 +63,16 @@ public class DefaultRedrawableLabel implements RedrawableLabel {
             return;
         }
 
-        adjustWritePosition();
+
+        int newLines = 0 - writePos.row;
+        if (newLines > 0) {
+            ansiExecutor.writeAt(Cursor.newBottomLeft(), newLines(newLines));
+        }
+
+        writePos.col = 0;
+        if (writePos.row > offset) {
+            writePos.row = offset;
+        }
         ansiExecutor.writeAt(writePos, new Action<AnsiContext>() {
             @Override
             public void execute(AnsiContext ansi) {
@@ -89,17 +99,33 @@ public class DefaultRedrawableLabel implements RedrawableLabel {
 
     @Override
     public void clear() {
-        adjustWritePosition();
-        ansiExecutor.writeAt(writePos, new Action<AnsiContext>() {
-            @Override
-            public void execute(AnsiContext ansi) {
-                ansi.eraseForward();
-            }
-        });
+        if (writePos.row >= 0) {
+            writePos.col = 0;
+            ansiExecutor.writeAt(writePos, new Action<AnsiContext>() {
+                @Override
+                public void execute(AnsiContext ansi) {
+                    ansi.eraseForward();
+                }
+            });
+        }
     }
 
-    private void adjustWritePosition() {
-        writePos.bottomLeft();
-        writePos.row += offset;
+    public void newLineAdjustment() {
+        scroll(-1);
+    }
+
+    public void scroll(int numberOfRows) {
+        writePos.row -= numberOfRows;
+    }
+
+    private static Action<AnsiContext> newLines(final int numberOfNewLines) {
+        return new Action<AnsiContext>() {
+            @Override
+            public void execute(AnsiContext ansi) {
+                for (int i = numberOfNewLines; i > 0; --i) {
+                    ansi.newline();
+                }
+            }
+        };
     }
 }

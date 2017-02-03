@@ -19,12 +19,12 @@ package org.gradle.internal.logging.console;
 import org.gradle.api.Action;
 import org.gradle.internal.logging.text.AbstractLineChoppingStyledTextOutput;
 
-public abstract class AbstractTextArea extends AbstractLineChoppingStyledTextOutput implements TextArea {
+public class DefaultTextArea extends AbstractLineChoppingStyledTextOutput implements TextArea {
     private static final int CHARS_PER_TAB_STOP = 8;
     private final Cursor writePos = new Cursor();
     private final AnsiExecutor ansiExecutor;
 
-    public AbstractTextArea(AnsiExecutor ansiExecutor) {
+    public DefaultTextArea(AnsiExecutor ansiExecutor) {
         this.ansiExecutor = ansiExecutor;
     }
 
@@ -77,13 +77,8 @@ public abstract class AbstractTextArea extends AbstractLineChoppingStyledTextOut
         ansiExecutor.writeAt(writePos, new Action<AnsiContext>() {
             @Override
             public void execute(AnsiContext ansi) {
-                if (isOverlappingWith(writePos)) {
-                    ansi.eraseForward();
-                }
                 ansi.newline();
             }
         });
     }
-
-    abstract boolean isOverlappingWith(Cursor position);
 }

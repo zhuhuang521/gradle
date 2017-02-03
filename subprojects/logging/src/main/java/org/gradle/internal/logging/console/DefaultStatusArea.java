@@ -21,34 +21,38 @@ import org.gradle.api.Action;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class AbstractStatusArea implements BuildProgressArea {
+public class DefaultStatusArea implements BuildProgressArea {
     private static final int BUILD_PROGRESS_LABEL_COUNT = 4;
     private static final int STATUS_AREA_HEIGHT = 2 + BUILD_PROGRESS_LABEL_COUNT;
-    private final List<RedrawableLabel> entries = new ArrayList<RedrawableLabel>(STATUS_AREA_HEIGHT);
+    private final List<DefaultRedrawableLabel> entries = new ArrayList<DefaultRedrawableLabel>(STATUS_AREA_HEIGHT);
 
     private final List<RedrawableLabel> buildProgressLabels = new ArrayList<RedrawableLabel>(BUILD_PROGRESS_LABEL_COUNT);
     private final Cursor statusAreaPos = new Cursor();
     private final AnsiExecutor ansiExecutor;
     private boolean isClosed;
 
-    public AbstractStatusArea(AnsiExecutor ansiExecutor) {
+    public DefaultStatusArea(AnsiExecutor ansiExecutor) {
         this.ansiExecutor = ansiExecutor;
 
         // TODO(ew): Way too much work being done in constructor, making this impossible to test
-        this.statusAreaPos.row += STATUS_AREA_HEIGHT - 1;
-
         int offset = STATUS_AREA_HEIGHT - 1;
 
-        entries.add(new DefaultRedrawableLabel(ansiExecutor, offset--));
+        entries.add(new DefaultRedrawableLabel(ansiExecutor, toCursor(offset), offset--));
 
         for (int i = 0; i < BUILD_PROGRESS_LABEL_COUNT; ++i) {
-            RedrawableLabel label = new DefaultRedrawableLabel(ansiExecutor, offset--);
+            DefaultRedrawableLabel label = new DefaultRedrawableLabel(ansiExecutor, toCursor(offset), offset--);
             entries.add(label);
             buildProgressLabels.add(label);
         }
 
         // Parking space for the write cursor
-        entries.add(new DefaultRedrawableLabel(ansiExecutor, offset--));
+        entries.add(new DefaultRedrawableLabel(ansiExecutor, toCursor(offset), offset--));
+    }
+
+    private static Cursor toCursor(int offset) {
+        Cursor result = Cursor.newBottomLeft();
+        result.row = offset - (STATUS_AREA_HEIGHT - 1);
+        return result;
     }
 
     @Override
@@ -76,16 +80,6 @@ public abstract class AbstractStatusArea implements BuildProgressArea {
     @Override
     public void close() {
         isClosed = true;
-
-        scrollConsole();
-
-        // Clear progress area
-        for (RedrawableLabel label : entries) {
-            label.clear();
-        }
-
-        // Reset position
-        ansiExecutor.positionCursorAt(statusAreaPos);
     }
 
     public boolean isOverlappingWith(Cursor cursor) {
@@ -98,17 +92,20 @@ public abstract class AbstractStatusArea implements BuildProgressArea {
     }
 
     public void newLineAdjustment() {
-        for (RedrawableLabel label : entries) {
-            label.getWritePosition().row++;
-        }
+        scroll(-1);
     }
 
     public void redraw() {
         if (isClosed) {
+            // Clear progress area
+            for (RedrawableLabel label : entries) {
+                label.clear();
+            }
+
+            // Reset position
+            ansiExecutor.positionCursorAt(statusAreaPos);
             return;
         }
-
-        scrollConsole();
 
         // Redraw every entries of this area
         for (RedrawableLabel label : entries) {
@@ -118,29 +115,14 @@ public abstract class AbstractStatusArea implements BuildProgressArea {
         parkCursor();
     }
 
-    private void scrollConsole() {
-        int numberOfOverlappedRows = getNumberOfOverlappingRows();
-
-        // Scroll the console by the number of overlapping rows
-        if (numberOfOverlappedRows > 0) {
-            ansiExecutor.writeAt(Cursor.newBottomLeft(), newLines(numberOfOverlappedRows));
+    public void scroll(int numberOfRows) {
+        statusAreaPos.row -= numberOfRows;
+        for (DefaultRedrawableLabel label : entries) {
+            label.scroll(numberOfRows);
         }
     }
 
-    abstract int getNumberOfOverlappingRows();
-
     private void parkCursor() {
         ansiExecutor.positionCursorAt(Cursor.newBottomLeft());
-    }
-
-    private static Action<AnsiContext> newLines(final int numberOfNewLines) {
-        return new Action<AnsiContext>() {
-            @Override
-            public void execute(AnsiContext ansi) {
-                for (int i = numberOfNewLines; i > 0; --i) {
-                    ansi.newline();  // This ends up calling newLineWritten(...)
-                }
-            }
-        };
     }
 }
