@@ -25,8 +25,6 @@ import org.gradle.internal.resource.transfer.ExternalResourceConnector;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.LogManager;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 public class GcsConnectorFactory implements ResourceConnectorFactory {
 
@@ -47,8 +45,9 @@ public class GcsConnectorFactory implements ResourceConnectorFactory {
         GcsResourceConnector resourceConnector;
         try {
             // Disable the default JUL logging which will log authentication tokens if its on here
-            LogManager.getLogManager().reset();
-            SLF4JBridgeHandler.install();
+            // TODO(ew): Ensure this is handled by logging services. These calls are already made deep in JavaUtilLoggingSystem.install()
+//            LogManager.getLogManager().reset();
+//            SLF4JBridgeHandler.install();
             resourceConnector = new GcsResourceConnector();
         } catch (Exception e) {
             throw new RuntimeException("Google Credentials must be set for GCS backed repository.", e);
