@@ -14,30 +14,7 @@
  * limitations under the License.
  */
 
-package org.gradle.caching.http;
-
-import org.gradle.caching.configuration.BuildCache;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-
 /**
- * HTTP build cache configuration.
+ * Classes for HTTP build cache services.
  */
-public interface HttpBuildCache extends BuildCache {
-    /**
-     * Sets the URL of the cache. The URL must end in a '/'.
-     */
-    void setUrl(String url);
-
-    /**
-     * Sets the URL of the cache. The URL must end in a '/'.
-     */
-    void setUrl(URL url) throws URISyntaxException;
-
-    /**
-     * Sets the URL of the cache. The URL must end in a '/'.
-     */
-    void setUrl(URI url);
-}
+package org.gradle.caching.http;

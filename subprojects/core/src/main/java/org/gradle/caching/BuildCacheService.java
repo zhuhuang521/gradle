@@ -34,6 +34,7 @@ import java.io.IOException;
  *     All other failures will be considered fatal and cause the Gradle build to fail.
  *     Fatal failures could include failing to read or write cache entries due to file permissions, authentication or corruption errors.
  * </p>
+ *
  * @since 3.5
  */
 @Incubating

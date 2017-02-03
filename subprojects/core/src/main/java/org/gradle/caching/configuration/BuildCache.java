@@ -18,10 +18,30 @@ package org.gradle.caching.configuration;
 
 import org.gradle.api.Incubating;
 
+/**
+ * Configuration object for build caches.
+ *
+ * @since 3.5
+ */
 @Incubating
 public interface BuildCache {
+    /**
+     * Returns whether the build cache is enabled.
+     */
     boolean isEnabled();
+
+    /**
+     * Enables or disables the build cache services.
+     */
     void setEnabled(boolean enabled);
+
+    /**
+     * Returns whether pushing to the build cache is enabled.
+     */
     boolean isPush();
+
+    /**
+     * Sets whether pushing to the build cache is enabled.
+     */
     void setPush(boolean enabled);
 }
