@@ -16,7 +16,10 @@
 
 package org.gradle.internal.logging.console;
 
+import org.gradle.api.Action;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class DefaultStatusArea implements BuildProgressArea {
@@ -35,16 +38,16 @@ public class DefaultStatusArea implements BuildProgressArea {
         // TODO(ew): Way too much work being done in constructor, making this impossible to test
         int offset = STATUS_AREA_HEIGHT - 1;
 
-        entries.add(new DefaultRedrawableLabel(ansiExecutor, toCursor(offset), offset--));
+        entries.add(new DefaultRedrawableLabel(ansiExecutor, toCursor(offset--)));
 
         for (int i = 0; i < BUILD_PROGRESS_LABEL_COUNT; ++i) {
-            DefaultRedrawableLabel label = new DefaultRedrawableLabel(ansiExecutor, toCursor(offset), offset--);
+            DefaultRedrawableLabel label = new DefaultRedrawableLabel(ansiExecutor, toCursor(offset--));
             entries.add(label);
             buildProgressLabels.add(label);
         }
 
         // Parking space for the write cursor
-        entries.add(new DefaultRedrawableLabel(ansiExecutor, toCursor(offset), offset--));
+        entries.add(new DefaultRedrawableLabel(ansiExecutor, toCursor(offset--)));
     }
 
     private static Cursor toCursor(int offset) {
@@ -90,19 +93,28 @@ public class DefaultStatusArea implements BuildProgressArea {
     }
 
     public void newLineAdjustment() {
-        scroll(-1);
+        statusAreaPos.row++;
+        for (DefaultRedrawableLabel label : entries) {
+            label.newLineAdjustment();
+        }
     }
 
     public void redraw() {
         if (isClosed) {
             // Clear progress area
             for (RedrawableLabel label : entries) {
-                label.clear();
+                label.setText(Collections.EMPTY_LIST);
+                label.redraw();
             }
 
             // Reset position
             ansiExecutor.positionCursorAt(statusAreaPos);
             return;
+        }
+
+        int newLines = 0 - entries.get(STATUS_AREA_HEIGHT - 1).getWritePosition().row;
+        if (newLines > 0) {
+            ansiExecutor.writeAt(Cursor.newBottomLeft(), newLines(newLines));
         }
 
         // Redraw every entries of this area
@@ -116,11 +128,22 @@ public class DefaultStatusArea implements BuildProgressArea {
     public void scroll(int numberOfRows) {
         statusAreaPos.row -= numberOfRows;
         for (DefaultRedrawableLabel label : entries) {
-            label.scroll(numberOfRows);
+            label.scrollDownBy(numberOfRows);
         }
     }
 
     private void parkCursor() {
         ansiExecutor.positionCursorAt(Cursor.newBottomLeft());
+    }
+
+    private static Action<AnsiContext> newLines(final int numberOfNewLines) {
+        return new Action<AnsiContext>() {
+            @Override
+            public void execute(AnsiContext ansi) {
+                for (int i = numberOfNewLines; i > 0; --i) {
+                    ansi.newline();
+                }
+            }
+        };
     }
 }

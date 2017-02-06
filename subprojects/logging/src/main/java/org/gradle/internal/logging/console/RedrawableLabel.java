@@ -22,5 +22,4 @@ package org.gradle.internal.logging.console;
 public interface RedrawableLabel extends Label, StyledLabel {
     void redraw();
     Cursor getWritePosition();
-    void clear();
 }

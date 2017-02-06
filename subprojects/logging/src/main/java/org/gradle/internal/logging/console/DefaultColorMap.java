@@ -91,7 +91,7 @@ public class DefaultColorMap implements ColorMap {
         } else {
             Ansi.Color ansiColor = Ansi.Color.valueOf(style.getColor().name().toUpperCase());
             if (ansiColor != DEFAULT) {
-                return new ForegroundColor(ansiColor);
+                colors.add(new ForegroundColor(ansiColor));
             }
         }
 

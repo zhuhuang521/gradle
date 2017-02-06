@@ -24,16 +24,16 @@ import java.util.Collections;
 import java.util.List;
 
 public class DefaultRedrawableLabel implements RedrawableLabel {
-    private final Cursor writePos;
+    private final Cursor writePos;  // Relative coordination system
     private final AnsiExecutor ansiExecutor;
-    private final int offset;
     private List<Span> spans = Collections.EMPTY_LIST;
     private List<Span> writtenSpans = Collections.EMPTY_LIST;
+    private int absolutePositionRow = 0;  // Absolute coordination system
+    private int previousWriteRow = absolutePositionRow;
 
-    DefaultRedrawableLabel(AnsiExecutor ansiExecutor, Cursor writePos, int offset) {
+    DefaultRedrawableLabel(AnsiExecutor ansiExecutor, Cursor writePos) {
         this.ansiExecutor = ansiExecutor;
         this.writePos = writePos;
-        this.offset = offset;
     }
 
     @Override
@@ -58,34 +58,33 @@ public class DefaultRedrawableLabel implements RedrawableLabel {
 
     @Override
     public void redraw() {
-        if (writePos.row == offset && writtenSpans.equals(spans)) {
+        if (previousWriteRow == absolutePositionRow && writtenSpans.equals(spans)) {
             // Does not need to be redrawn
             return;
         }
 
-
-        int newLines = 0 - writePos.row;
-        if (newLines > 0) {
-            ansiExecutor.writeAt(Cursor.newBottomLeft(), newLines(newLines));
-        }
+        final int writtenTextLength = writePos.col;
 
         writePos.col = 0;
-        if (writePos.row > offset) {
-            writePos.row = offset;
-        }
         ansiExecutor.writeAt(writePos, new Action<AnsiContext>() {
             @Override
             public void execute(AnsiContext ansi) {
+                int textLength = 0;
                 for (Span span : spans) {
                     ansi.withStyle(span.getStyle(), writeText(span.getText()));
+
+                    textLength += span.getText().length();
                 }
 
-                // Remove what ever may be at the end of the line
-                ansi.eraseForward();
+                if (previousWriteRow != absolutePositionRow
+                    || (previousWriteRow == absolutePositionRow && textLength < writtenTextLength)) {
+                    ansi.eraseForward();
+                }
             }
         });
 
         writtenSpans = spans;
+        previousWriteRow = absolutePositionRow;
     }
 
     private static Action<AnsiContext> writeText(final String text) {
@@ -97,35 +96,24 @@ public class DefaultRedrawableLabel implements RedrawableLabel {
         };
     }
 
-    @Override
-    public void clear() {
-        if (writePos.row >= 0) {
-            writePos.col = 0;
-            ansiExecutor.writeAt(writePos, new Action<AnsiContext>() {
-                @Override
-                public void execute(AnsiContext ansi) {
-                    ansi.eraseForward();
-                }
-            });
-        }
-    }
-
+    // Only for relative positioning
     public void newLineAdjustment() {
-        scroll(-1);
+        writePos.row++;
     }
 
-    public void scroll(int numberOfRows) {
-        writePos.row -= numberOfRows;
+    // According to absolute positioning
+    public void scrollBy(int rows) {
+        writePos.row -= rows;
+        absolutePositionRow += rows;
     }
 
-    private static Action<AnsiContext> newLines(final int numberOfNewLines) {
-        return new Action<AnsiContext>() {
-            @Override
-            public void execute(AnsiContext ansi) {
-                for (int i = numberOfNewLines; i > 0; --i) {
-                    ansi.newline();
-                }
-            }
-        };
+    // According to absolute positioning
+    public void scrollUpBy(int rows) {
+        scrollBy(-rows);
+    }
+
+    // According to absolute positioning
+    public void scrollDownBy(int rows) {
+        scrollBy(rows);
     }
 }
