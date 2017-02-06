@@ -31,6 +31,7 @@ import java.util.Arrays;
 
 // TODO(ew): LabelBackedBuildSummaryRenderer would be more accurate
 public class BuildStatusBackedRenderer implements OutputEventListener {
+    // TODO(ew): Use ProgressBar for formatting
     private static final String INITIAL_STATUS_TEXT = "<-------------> 0% INITIALIZING";
     private final OutputEventListener listener;
     private final StyledLabel buildStatusLabel;
