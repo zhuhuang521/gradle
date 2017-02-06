@@ -36,6 +36,13 @@ public class Cursor {
         row = 0;
     }
 
+    public static Cursor at(int row, int col) {
+        Cursor result = new Cursor();
+        result.row = row;
+        result.col = col;
+        return result;
+    }
+
     public static Cursor newBottomLeft() {
         Cursor result = new Cursor();
         result.bottomLeft();
