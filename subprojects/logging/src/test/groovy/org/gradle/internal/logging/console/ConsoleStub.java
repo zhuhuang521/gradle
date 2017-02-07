@@ -47,7 +47,7 @@ public class ConsoleStub implements Console {
     public BuildProgressArea getBuildProgressArea() {
         return new BuildProgressArea() {
             @Override
-            public StyledLabel getStatusBar() {
+            public StyledLabel getProgressBar() {
                 return new StyledLabel() {
                     @Override
                     public void setText(String text) {

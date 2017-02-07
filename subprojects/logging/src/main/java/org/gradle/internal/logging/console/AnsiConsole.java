@@ -73,7 +73,7 @@ public class AnsiConsole implements Console {
 
     @Override
     public StyledLabel getStatusBar() {
-        return statusArea.getStatusBar();
+        return statusArea.getProgressBar();
     }
 
     @Override

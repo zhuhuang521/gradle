@@ -26,8 +26,9 @@ public class DefaultStatusArea implements BuildProgressArea {
     private static final int BUILD_PROGRESS_LABEL_COUNT = 4;
     private static final int STATUS_AREA_HEIGHT = 2 + BUILD_PROGRESS_LABEL_COUNT;
     private final List<DefaultRedrawableLabel> entries = new ArrayList<DefaultRedrawableLabel>(STATUS_AREA_HEIGHT);
+    private final DefaultRedrawableLabel progressBarLabel;
 
-    private final List<RedrawableLabel> buildProgressLabels = new ArrayList<RedrawableLabel>(BUILD_PROGRESS_LABEL_COUNT);
+    private final List<StyledLabel> buildProgressLabels = new ArrayList<StyledLabel>(BUILD_PROGRESS_LABEL_COUNT);
     private final Cursor statusAreaPos = new Cursor();
     private final AnsiExecutor ansiExecutor;
     private boolean isClosed;
@@ -36,38 +37,33 @@ public class DefaultStatusArea implements BuildProgressArea {
         this.ansiExecutor = ansiExecutor;
 
         // TODO(ew): Way too much work being done in constructor, making this impossible to test
-        int offset = STATUS_AREA_HEIGHT - 1;
+        int row = 0;
 
-        entries.add(new DefaultRedrawableLabel(ansiExecutor, toCursor(offset--)));
+        progressBarLabel = newLabel(row--);
+        entries.add(progressBarLabel);
 
         for (int i = 0; i < BUILD_PROGRESS_LABEL_COUNT; ++i) {
-            DefaultRedrawableLabel label = new DefaultRedrawableLabel(ansiExecutor, toCursor(offset--));
+            DefaultRedrawableLabel label = newLabel(row--);
             entries.add(label);
             buildProgressLabels.add(label);
         }
 
         // Parking space for the write cursor
-        entries.add(new DefaultRedrawableLabel(ansiExecutor, toCursor(offset--)));
+        entries.add(newLabel(row--));
     }
 
-    private static Cursor toCursor(int offset) {
-        Cursor result = Cursor.newBottomLeft();
-        result.row = offset - (STATUS_AREA_HEIGHT - 1);
-        return result;
+    private DefaultRedrawableLabel newLabel(int row) {
+        return new DefaultRedrawableLabel(ansiExecutor, Cursor.at(row--, 0));
     }
 
     @Override
     public List<StyledLabel> getBuildProgressLabels() {
-        List<StyledLabel> result = new ArrayList<StyledLabel>(buildProgressLabels.size());
-        for (RedrawableLabel label : buildProgressLabels) {
-            result.add(label);
-        }
-        return result;
+        return Collections.unmodifiableList(buildProgressLabels);
     }
 
     @Override
-    public StyledLabel getStatusBar() {
-        return entries.get(0);
+    public StyledLabel getProgressBar() {
+        return progressBarLabel;
     }
 
     public Cursor getWritePosition() {

@@ -20,7 +20,7 @@ import java.util.List;
 
 public interface BuildProgressArea {
     // TODO(ew): Consider whether this belongs in Console or here
-    StyledLabel getStatusBar();
+    StyledLabel getProgressBar();
     List<StyledLabel> getBuildProgressLabels();
     void close();
     // TODO(ew): Consider void open();
