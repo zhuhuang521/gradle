@@ -44,6 +44,7 @@ public class ThrottlingOutputEventListener implements OutputEventListener {
     private long lastUpdate;
     private final List<OutputEvent> queue = new ArrayList<OutputEvent>();
 
+    // TODO(EW): Move console ref downstream
     public ThrottlingOutputEventListener(OutputEventListener listener, Console console, TimeProvider timeProvider) {
         this(listener, console, Integer.getInteger("org.gradle.console.throttle", 85), Executors.newSingleThreadScheduledExecutor(), timeProvider);
     }

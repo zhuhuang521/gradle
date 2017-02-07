@@ -43,6 +43,7 @@ public class DefaultRedrawableLabel implements RedrawableLabel {
         setText(new Span(text));
     }
 
+    // TODO(ew): This is hard to verify in tests because we're accepting a collection and there is no way to getText() from a Label
     @Override
     public void setText(List<Span> spans) {
         this.spans = spans;
