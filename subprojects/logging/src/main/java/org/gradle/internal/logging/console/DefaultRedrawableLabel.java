@@ -53,13 +53,16 @@ public class DefaultRedrawableLabel implements RedrawableLabel {
         setText(Arrays.asList(spans));
     }
 
-    @Override
     public Cursor getWritePosition() {
         return writePos;
     }
 
     public void setVisible(boolean isVisible) {
         this.isVisible = isVisible;
+    }
+
+    public boolean isOverlappingWith(Cursor cursor) {
+        return cursor.row == writePos.row && writePos.col > cursor.col;
     }
 
     @Override

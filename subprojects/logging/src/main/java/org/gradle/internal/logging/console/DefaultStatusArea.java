@@ -83,8 +83,8 @@ public class DefaultStatusArea implements BuildProgressArea {
     }
 
     public boolean isOverlappingWith(Cursor cursor) {
-        for (RedrawableLabel label : entries) {
-            if (cursor.row == label.getWritePosition().row && label.getWritePosition().col > cursor.col) {
+        for (DefaultRedrawableLabel label : entries) {
+            if (label.isOverlappingWith(cursor)) {
                 return true;
             }
         }
