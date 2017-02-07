@@ -66,7 +66,7 @@ public class AnsiConsole implements Console {
             numberOfOverlappedRows++;
         }
 
-        statusArea.scroll(numberOfOverlappedRows);
+        statusArea.scrollDownBy(numberOfOverlappedRows);
 
         statusArea.redraw();
     }

@@ -125,11 +125,22 @@ public class DefaultStatusArea implements BuildProgressArea {
         parkCursor();
     }
 
-    public void scroll(int numberOfRows) {
-        statusAreaPos.row -= numberOfRows;
+    // According to absolute positioning
+    public void scrollBy(int rows) {
+        statusAreaPos.row -= rows;
         for (DefaultRedrawableLabel label : entries) {
-            label.scrollDownBy(numberOfRows);
+            label.scrollBy(rows);
         }
+    }
+
+    // According to absolute positioning
+    public void scrollUpBy(int rows) {
+        scrollBy(-rows);
+    }
+
+    // According to absolute positioning
+    public void scrollDownBy(int rows) {
+        scrollBy(rows);
     }
 
     private void parkCursor() {
