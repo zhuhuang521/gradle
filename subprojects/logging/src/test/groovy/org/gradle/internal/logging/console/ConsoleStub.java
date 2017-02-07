@@ -86,7 +86,7 @@ public class ConsoleStub implements Console {
         return mainArea.toString();
     }
 
-    public TextArea getMainArea() {
+    public TextArea getBuildOutputArea() {
         return mainArea;
     }
 

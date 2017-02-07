@@ -17,7 +17,7 @@
 package org.gradle.internal.logging.console;
 
 public interface Console {
-    TextArea getMainArea();
+    TextArea getBuildOutputArea();
 
     BuildProgressArea getBuildProgressArea();
 

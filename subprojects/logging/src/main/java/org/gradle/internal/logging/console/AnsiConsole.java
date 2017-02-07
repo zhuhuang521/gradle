@@ -24,8 +24,8 @@ import java.io.IOException;
 
 public class AnsiConsole implements Console {
     private final Flushable flushable;
-    private final DefaultStatusArea statusArea;
-    private final DefaultTextArea textArea;
+    private final MultiLineBuildProgressArea buildStatusArea;
+    private final DefaultTextArea buildOutputArea;
     private final AnsiExecutor ansiExecutor;
 
     public AnsiConsole(Appendable target, Flushable flushable, ColorMap colorMap) {
@@ -40,8 +40,8 @@ public class AnsiConsole implements Console {
         this.flushable = flushable;
         this.ansiExecutor = new DefaultAnsiExecutor(target, colorMap, factory, Cursor.newBottomLeft(), new Listener());
 
-        textArea = new DefaultTextArea(ansiExecutor);
-        statusArea = new DefaultStatusArea(ansiExecutor);
+        buildOutputArea = new DefaultTextArea(ansiExecutor);
+        buildStatusArea = new MultiLineBuildProgressArea(ansiExecutor);
     }
 
     @Override
@@ -56,45 +56,45 @@ public class AnsiConsole implements Console {
 
     private void redraw() {
         // Calculate how many rows of the status area overlap with the text area
-        int numberOfOverlappedRows = statusArea.getWritePosition().row - textArea.getWritePosition().row;
+        int numberOfOverlappedRows = buildStatusArea.getWritePosition().row - buildOutputArea.getWritePosition().row;
 
         // If textArea is on a status line but nothing was written, this means a new line was just written. While
         // we wait for additional text, we assume this row doesn't count as overlapping and use it as a status
         // line. In the opposite case, we want to scroll the progress area one more line. This avoid having an one
         // line gap between the text area and the status area.
-        if (textArea.getWritePosition().col > 0) {
+        if (buildOutputArea.getWritePosition().col > 0) {
             numberOfOverlappedRows++;
         }
 
-        statusArea.scrollDownBy(numberOfOverlappedRows);
+        buildStatusArea.scrollDownBy(numberOfOverlappedRows);
 
-        statusArea.redraw();
+        buildStatusArea.redraw();
     }
 
     @Override
     public StyledLabel getStatusBar() {
-        return statusArea.getProgressBar();
+        return buildStatusArea.getProgressBar();
     }
 
     @Override
     public BuildProgressArea getBuildProgressArea() {
-        return statusArea;
+        return buildStatusArea;
     }
 
     @Override
-    public TextArea getMainArea() {
-        return textArea;
+    public TextArea getBuildOutputArea() {
+        return buildOutputArea;
     }
 
     private class Listener implements DefaultAnsiExecutor.NewLineListener {
         @Override
         public void beforeNewLineWritten(Cursor writeCursor) {
             if (writeCursor.row == 0) {
-                textArea.newLineAdjustment();
-                statusArea.newLineAdjustment();
+                buildOutputArea.newLineAdjustment();
+                buildStatusArea.newLineAdjustment();
             }
 
-            if (statusArea.isOverlappingWith(writeCursor)) {
+            if (buildStatusArea.isOverlappingWith(writeCursor)) {
                 ansiExecutor.writeAt(writeCursor, new Action<AnsiContext>() {
                     @Override
                     public void execute(AnsiContext ansi) {

@@ -23,7 +23,7 @@ import org.gradle.internal.logging.events.OutputEventListener;
 import org.gradle.internal.logging.events.ProgressCompleteEvent;
 import org.gradle.internal.logging.events.ProgressEvent;
 import org.gradle.internal.logging.events.ProgressStartEvent;
-import org.gradle.internal.logging.events.RenderNowEvent;
+import org.gradle.internal.logging.events.OutputEventQueueDrainedEvent;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -32,12 +32,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-// TODO(ew): Rename this. BuildProgress is ambiguous. This is actually backed by Labels (or a TextArea).
-public class BuildProgressBackedRenderer implements OutputEventListener {
+public class WorkInProgressRenderer implements OutputEventListener {
     private final OutputEventListener listener;
     private final ProgressOperations operations = new ProgressOperations();
     private final BuildProgressArea progressArea;
-    private final DefaultBuildProgressFormatter labelFormatter;
+    private final DefaultWorkInProgressFormatter labelFormatter;
 
     // Track all unused labels to display future progress operation
     private final Deque<StyledLabel> unusedProgressLabels;
@@ -51,7 +50,7 @@ public class BuildProgressBackedRenderer implements OutputEventListener {
     // Track the parent-children relation between progress operation to avoid displaying a parent when children are been displayed
     private final Map<OperationIdentifier, Set<OperationIdentifier>> parentIdToChildrenIds = new HashMap<OperationIdentifier, Set<OperationIdentifier>>();
 
-    public BuildProgressBackedRenderer(OutputEventListener listener, BuildProgressArea progressArea, DefaultBuildProgressFormatter labelFormatter) {
+    public WorkInProgressRenderer(OutputEventListener listener, BuildProgressArea progressArea, DefaultWorkInProgressFormatter labelFormatter) {
         this.listener = listener;
         this.progressArea = progressArea;
         this.labelFormatter = labelFormatter;
@@ -72,7 +71,7 @@ public class BuildProgressBackedRenderer implements OutputEventListener {
             operations.progress(progressEvent.getStatus(), progressEvent.getOperationId());
         } else if (event instanceof EndOutputEvent) {
             progressArea.setVisible(false);
-        } else if (event instanceof RenderNowEvent) {
+        } else if (event instanceof OutputEventQueueDrainedEvent) {
             renderNow();
         }
         listener.onOutput(event);

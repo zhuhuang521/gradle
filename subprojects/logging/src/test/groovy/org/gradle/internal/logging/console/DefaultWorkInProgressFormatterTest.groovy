@@ -22,10 +22,10 @@ import spock.lang.Specification
 import spock.lang.Subject
 
 @Ignore
-class DefaultBuildProgressFormatterTest extends Specification {
+class DefaultWorkInProgressFormatterTest extends Specification {
 
     def consoleMetaData = Mock(ConsoleMetaData)
-    @Subject statusBarFormatter = new DefaultBuildProgressFormatter(consoleMetaData)
+    @Subject statusBarFormatter = new DefaultWorkInProgressFormatter(consoleMetaData)
 
     def "formats operations"() {
         def op1 = new ProgressOperation("shortDescr1", "status1", null)

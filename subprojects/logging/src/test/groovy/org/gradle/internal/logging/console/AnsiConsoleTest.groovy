@@ -38,14 +38,14 @@ class AnsiConsoleTest extends Specification {
 
     def appendsTextToMainArea() {
         when:
-        console.mainArea.append('message')
+        console.buildOutputArea.append('message')
 
         then:
         1 * ansi.a('message')
         0 * ansi._
 
         when:
-        console.mainArea.append("message2${EOL}message3")
+        console.buildOutputArea.append("message2${EOL}message3")
 
         then:
         1 * ansi.a('message2')
@@ -56,8 +56,8 @@ class AnsiConsoleTest extends Specification {
 
     def appendsStyledTextToMainArea() {
         when:
-        console.mainArea.withStyle(StyledTextOutput.Style.Header).append('message')
-        console.mainArea.append("message2")
+        console.buildOutputArea.withStyle(StyledTextOutput.Style.Header).append('message')
+        console.buildOutputArea.append("message2")
 
         then:
         1 * ansi.fg(Color.YELLOW)
@@ -69,8 +69,8 @@ class AnsiConsoleTest extends Specification {
 
     def appendsStyledTextWithTabsToMainArea() {
         when:
-        console.mainArea.withStyle(StyledTextOutput.Style.Header).append('12\t3')
-        console.mainArea.append("\t4\t\t")
+        console.buildOutputArea.withStyle(StyledTextOutput.Style.Header).append('12\t3')
+        console.buildOutputArea.append("\t4\t\t")
 
         then:
         1 * ansi.fg(Color.YELLOW)
@@ -98,7 +98,7 @@ class AnsiConsoleTest extends Specification {
 
     def flushDisplaysStatusBarWhenTextInMainArea() {
         when:
-        console.mainArea.append("message${EOL}")
+        console.buildOutputArea.append("message${EOL}")
         console.statusBar.text = 'text'
         console.flush()
 
@@ -123,7 +123,7 @@ class AnsiConsoleTest extends Specification {
     def flushDoesNotShowStatusBarWhenStatusBarIsEmpty() {
         when:
         console.statusBar.text = ''
-        console.mainArea.append("message${EOL}")
+        console.buildOutputArea.append("message${EOL}")
         console.flush()
 
         then:
@@ -217,8 +217,8 @@ class AnsiConsoleTest extends Specification {
         console.flush()
 
         when:
-        console.mainArea.append("message1$EOL");
-        console.mainArea.append("message2$EOL");
+        console.buildOutputArea.append("message1$EOL");
+        console.buildOutputArea.append("message2$EOL");
 
         then:
         1 * ansi.cursorLeft(6)
@@ -244,9 +244,9 @@ class AnsiConsoleTest extends Specification {
         console.flush()
 
         when:
-        console.mainArea.append("12");
-        console.mainArea.append("34$EOL");
-        console.mainArea.append("$EOL$EOL");
+        console.buildOutputArea.append("12");
+        console.buildOutputArea.append("34$EOL");
+        console.buildOutputArea.append("$EOL$EOL");
 
         then:
         1 * ansi.cursorLeft(6)
@@ -274,8 +274,8 @@ class AnsiConsoleTest extends Specification {
         console.flush()
 
         when:
-        console.mainArea.append("\t");
-        console.mainArea.append("12\t345\t6$EOL");
+        console.buildOutputArea.append("\t");
+        console.buildOutputArea.append("12\t345\t6$EOL");
 
         then:
         1 * ansi.cursorLeft(6)
@@ -304,7 +304,7 @@ class AnsiConsoleTest extends Specification {
         console.flush()
 
         when:
-        console.mainArea.append("message1");
+        console.buildOutputArea.append("message1");
 
         then:
         1 * ansi.cursorLeft(6)
@@ -322,7 +322,7 @@ class AnsiConsoleTest extends Specification {
         0 * ansi._
 
         when:
-        console.mainArea.append("message2");
+        console.buildOutputArea.append("message2");
 
         then:
         1 * ansi.cursorLeft(6)
@@ -344,7 +344,7 @@ class AnsiConsoleTest extends Specification {
         console.flush()
 
         when:
-        console.mainArea.append("\t12\t3\t");
+        console.buildOutputArea.append("\t12\t3\t");
 
         then:
         1 * ansi.cursorLeft(6)
@@ -366,7 +366,7 @@ class AnsiConsoleTest extends Specification {
         0 * ansi._
 
         when:
-        console.mainArea.append("456");
+        console.buildOutputArea.append("456");
 
         then:
         1 * ansi.cursorLeft(6)
@@ -388,8 +388,8 @@ class AnsiConsoleTest extends Specification {
         console.flush()
 
         when:
-        console.mainArea.append("a");
-        console.mainArea.append("b");
+        console.buildOutputArea.append("a");
+        console.buildOutputArea.append("b");
 
         then:
         1 * ansi.cursorLeft(6)
@@ -409,7 +409,7 @@ class AnsiConsoleTest extends Specification {
         0 * ansi._
 
         when:
-        console.mainArea.append("c");
+        console.buildOutputArea.append("c");
 
         then:
         1 * ansi.cursorLeft(6)
@@ -431,7 +431,7 @@ class AnsiConsoleTest extends Specification {
         console.flush()
 
         when:
-        console.mainArea.append(EOL);
+        console.buildOutputArea.append(EOL);
         console.flush()
 
         then:
@@ -444,7 +444,7 @@ class AnsiConsoleTest extends Specification {
         0 * ansi._
 
         when:
-        console.mainArea.append("message");
+        console.buildOutputArea.append("message");
         console.flush()
 
         then:
@@ -460,9 +460,9 @@ class AnsiConsoleTest extends Specification {
     def updatesStatusBarValueWhenNoTrailingEOLInMainText() {
         given:
         console.statusBar.text = 'status'
-        console.mainArea.append("message1");
+        console.buildOutputArea.append("message1");
         console.flush()
-        console.mainArea.append("message2");
+        console.buildOutputArea.append("message2");
         console.flush()
 
         when:
@@ -481,7 +481,7 @@ class AnsiConsoleTest extends Specification {
 
     def addsStatusBarWhenNoTrailingEOLInMainArea() {
         given:
-        console.mainArea.append('message')
+        console.buildOutputArea.append('message')
         console.flush()
 
         when:
@@ -497,7 +497,7 @@ class AnsiConsoleTest extends Specification {
 
     def removesStatusBarWhenNoTrailingEOLInMainArea() {
         given:
-        console.mainArea.append('message1')
+        console.buildOutputArea.append('message1')
         console.statusBar.text = 'status'
         console.flush()
 
@@ -511,7 +511,7 @@ class AnsiConsoleTest extends Specification {
         0 * ansi._
 
         when:
-        console.mainArea.append('message2')
+        console.buildOutputArea.append('message2')
         console.flush()
 
         then:
@@ -523,18 +523,18 @@ class AnsiConsoleTest extends Specification {
 
     def coalescesMultipleUpdates() {
         given:
-        console.mainArea.append('message1')
+        console.buildOutputArea.append('message1')
         console.statusBar.text = 'status'
         console.flush()
 
         when:
         console.statusBar.text = ''
-        console.mainArea.append('message2')
+        console.buildOutputArea.append('message2')
         console.statusBar.text = '1'
         console.statusBar.text = '2'
-        console.mainArea.append('message3')
-        console.mainArea.append(EOL)
-        console.mainArea.append('message4')
+        console.buildOutputArea.append('message3')
+        console.buildOutputArea.append(EOL)
+        console.buildOutputArea.append('message4')
         console.statusBar.text = '3'
         console.flush()
 

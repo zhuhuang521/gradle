@@ -19,7 +19,7 @@ package org.gradle.internal.logging.events;
 import org.gradle.api.Nullable;
 import org.gradle.api.logging.LogLevel;
 
-public class RenderNowEvent extends OutputEvent {
+public class OutputEventQueueDrainedEvent extends OutputEvent {
     @Nullable
     @Override
     public LogLevel getLogLevel() {

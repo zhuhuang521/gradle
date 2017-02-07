@@ -19,7 +19,7 @@ package org.gradle.internal.logging.console
 import org.fusesource.jansi.Ansi
 import spock.lang.Specification
 
-class DefaultStatusAreaTest extends Specification {
+class MultiLineBuildProgressAreaTest extends Specification {
     def ansi = Mock(Ansi)
     def factory = new AnsiFactory() {
         Ansi create() {
@@ -31,7 +31,7 @@ class DefaultStatusAreaTest extends Specification {
     def colorMap = new TestColorMap()
     def listener = Mock(DefaultAnsiExecutor.NewLineListener)
     def ansiExecutor = new DefaultAnsiExecutor(target, colorMap, factory, writeCursor, listener)
-    def area = new DefaultStatusArea(ansiExecutor)
+    def area = new MultiLineBuildProgressArea(ansiExecutor)
 
     def setup() {
         listener.beforeNewLineWritten(_) >> {

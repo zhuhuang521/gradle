@@ -23,5 +23,4 @@ public interface BuildProgressArea {
     StyledLabel getProgressBar();
     List<StyledLabel> getBuildProgressLabels();
     void setVisible(boolean isVisible);
-    // TODO(ew): Consider void open();
 }

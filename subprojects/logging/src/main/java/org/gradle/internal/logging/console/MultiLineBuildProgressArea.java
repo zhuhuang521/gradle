@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class DefaultStatusArea implements BuildProgressArea {
+public class MultiLineBuildProgressArea implements BuildProgressArea {
     private static final int BUILD_PROGRESS_LABEL_COUNT = 4;
     private static final int STATUS_AREA_HEIGHT = 2 + BUILD_PROGRESS_LABEL_COUNT;
     private final List<DefaultRedrawableLabel> entries = new ArrayList<DefaultRedrawableLabel>(STATUS_AREA_HEIGHT);
@@ -33,7 +33,7 @@ public class DefaultStatusArea implements BuildProgressArea {
     private final AnsiExecutor ansiExecutor;
     private boolean isVisible = true;
 
-    public DefaultStatusArea(AnsiExecutor ansiExecutor) {
+    public MultiLineBuildProgressArea(AnsiExecutor ansiExecutor) {
         this.ansiExecutor = ansiExecutor;
 
         // TODO(ew): Way too much work being done in constructor, making this impossible to test

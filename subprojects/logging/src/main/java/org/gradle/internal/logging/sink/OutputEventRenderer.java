@@ -23,12 +23,12 @@ import org.gradle.api.logging.configuration.ConsoleOutput;
 import org.gradle.internal.event.ListenerBroadcast;
 import org.gradle.internal.logging.config.LoggingRouter;
 import org.gradle.internal.logging.console.AnsiConsole;
-import org.gradle.internal.logging.console.BuildProgressBackedRenderer;
-import org.gradle.internal.logging.console.BuildStatusBackedRenderer;
+import org.gradle.internal.logging.console.ThrottlingOutputEventListener;
+import org.gradle.internal.logging.console.WorkInProgressRenderer;
+import org.gradle.internal.logging.console.BuildStatusRenderer;
 import org.gradle.internal.logging.console.ColorMap;
 import org.gradle.internal.logging.console.Console;
-import org.gradle.internal.logging.console.ConsoleBackedProgressRenderer;
-import org.gradle.internal.logging.console.DefaultBuildProgressFormatter;
+import org.gradle.internal.logging.console.DefaultWorkInProgressFormatter;
 import org.gradle.internal.logging.console.DefaultColorMap;
 import org.gradle.internal.logging.console.StyledTextOutputBackedRenderer;
 import org.gradle.internal.logging.events.EndOutputEvent;
@@ -184,13 +184,13 @@ public class OutputEventRenderer implements OutputEventListener, LoggingRouter {
     }
 
     public OutputEventRenderer addConsole(Console console, boolean stdout, boolean stderr, ConsoleMetaData consoleMetaData) {
-        // ConsoleBackedProgressRenderer => WorkInProgressRenderer(BuildSummaryFormatter, WorkInProgressFormatter) => ProgressLogEventGenerator
-        final OutputEventListener consoleChain = new ConsoleBackedProgressRenderer(
-             new BuildStatusBackedRenderer(
-                new BuildProgressBackedRenderer(
+        // ThrottlingOutputEventListener => WorkInProgressRenderer(BuildSummaryFormatter, WorkInProgressFormatter) => ProgressLogEventGenerator
+        final OutputEventListener consoleChain = new ThrottlingOutputEventListener(
+             new BuildStatusRenderer(
+                new WorkInProgressRenderer(
                     new ProgressLogEventGenerator(
-                        new StyledTextOutputBackedRenderer(console.getMainArea()), true),
-                    console.getBuildProgressArea(), new DefaultBuildProgressFormatter(consoleMetaData)),
+                        new StyledTextOutputBackedRenderer(console.getBuildOutputArea()), true),
+                    console.getBuildProgressArea(), new DefaultWorkInProgressFormatter(consoleMetaData)),
                 console.getStatusBar(), consoleMetaData),
             console,
             new TrueTimeProvider());

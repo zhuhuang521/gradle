@@ -19,7 +19,7 @@ package org.gradle.internal.logging.console;
 import org.gradle.internal.logging.events.EndOutputEvent;
 import org.gradle.internal.logging.events.OutputEvent;
 import org.gradle.internal.logging.events.OutputEventListener;
-import org.gradle.internal.logging.events.RenderNowEvent;
+import org.gradle.internal.logging.events.OutputEventQueueDrainedEvent;
 import org.gradle.internal.time.TimeProvider;
 
 import java.util.ArrayList;
@@ -28,27 +28,27 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-// TODO(ew): It seems the purpose of this class is to throttle writes to the console and flush it.
-// TODO(ew): We should consider having one thing coordinating console writes and may need to rename this class to reflect that.
-public class ConsoleBackedProgressRenderer implements OutputEventListener {
-    private static final RenderNowEvent RENDER_NOW_EVENT = new RenderNowEvent();
+/**
+ * Queue output events to be forwarded and schedule flush when time passed or if end of build is signalled.
+ */
+public class ThrottlingOutputEventListener implements OutputEventListener {
+    private static final OutputEventQueueDrainedEvent QUEUE_DRAINED_EVENT = new OutputEventQueueDrainedEvent();
     private final OutputEventListener listener;
     private final Console console;
 
     private final ScheduledExecutorService executor;
     private final TimeProvider timeProvider;
     private final int throttleMs;
-    // Protected by lock
     private final Object lock = new Object();
 
     private long lastUpdate;
     private final List<OutputEvent> queue = new ArrayList<OutputEvent>();
 
-    public ConsoleBackedProgressRenderer(OutputEventListener listener, Console console, TimeProvider timeProvider) {
+    public ThrottlingOutputEventListener(OutputEventListener listener, Console console, TimeProvider timeProvider) {
         this(listener, console, Integer.getInteger("org.gradle.console.throttle", 85), Executors.newSingleThreadScheduledExecutor(), timeProvider);
     }
 
-    ConsoleBackedProgressRenderer(OutputEventListener listener, Console console, int throttleMs, ScheduledExecutorService executor, TimeProvider timeProvider) {
+    ThrottlingOutputEventListener(OutputEventListener listener, Console console, int throttleMs, ScheduledExecutorService executor, TimeProvider timeProvider) {
         this.throttleMs = throttleMs;
         this.listener = listener;
         this.console = console;
@@ -97,6 +97,7 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
             return;
         }
 
+        // process all events then notify consumers that they've received all for now
         for (OutputEvent event : queue) {
             try {
                 listener.onOutput(event);
@@ -104,9 +105,7 @@ public class ConsoleBackedProgressRenderer implements OutputEventListener {
                 throw new RuntimeException("Unable to process incoming event '" + event + "' (" + event.getClass().getSimpleName() + ")", e);
             }
         }
-
-        // FIXME(ew): This seems like a bit of an abuse of the listener manager
-        listener.onOutput(RENDER_NOW_EVENT);
+        listener.onOutput(QUEUE_DRAINED_EVENT);
 
         queue.clear();
         lastUpdate = now;

@@ -22,15 +22,14 @@ import org.gradle.internal.logging.events.OutputEventListener;
 import org.gradle.internal.logging.events.ProgressCompleteEvent;
 import org.gradle.internal.logging.events.ProgressEvent;
 import org.gradle.internal.logging.events.ProgressStartEvent;
-import org.gradle.internal.logging.events.RenderNowEvent;
+import org.gradle.internal.logging.events.OutputEventQueueDrainedEvent;
 import org.gradle.internal.logging.text.Span;
 import org.gradle.internal.logging.text.Style;
 import org.gradle.internal.nativeintegration.console.ConsoleMetaData;
 
 import java.util.Arrays;
 
-// TODO(ew): LabelBackedBuildSummaryRenderer would be more accurate
-public class BuildStatusBackedRenderer implements OutputEventListener {
+public class BuildStatusRenderer implements OutputEventListener {
     // TODO(ew): Use ProgressBar for formatting
     private static final String INITIAL_STATUS_TEXT = "<-------------> 0% INITIALIZING";
     private final OutputEventListener listener;
@@ -39,7 +38,7 @@ public class BuildStatusBackedRenderer implements OutputEventListener {
     private String currentBuildStatus = INITIAL_STATUS_TEXT;
     private OperationIdentifier rootOperationId;
 
-    public BuildStatusBackedRenderer(OutputEventListener listener, StyledLabel buildStatusLabel, ConsoleMetaData consoleMetaData) {
+    public BuildStatusRenderer(OutputEventListener listener, StyledLabel buildStatusLabel, ConsoleMetaData consoleMetaData) {
         this.listener = listener;
         this.buildStatusLabel = buildStatusLabel;
         this.consoleMetaData = consoleMetaData;
@@ -77,7 +76,7 @@ public class BuildStatusBackedRenderer implements OutputEventListener {
             if (progressEvent.getOperationId().equals(rootOperationId)) {
                 buildProgressed(progressEvent);
             }
-        } else if (event instanceof RenderNowEvent) {
+        } else if (event instanceof OutputEventQueueDrainedEvent) {
             renderNow();
         }
         listener.onOutput(event);

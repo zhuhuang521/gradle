@@ -18,19 +18,19 @@ package org.gradle.internal.logging.console
 import org.gradle.internal.logging.OutputSpecification
 import org.gradle.internal.logging.events.EndOutputEvent
 import org.gradle.internal.logging.events.OutputEventListener
-import org.gradle.internal.logging.events.RenderNowEvent
+import org.gradle.internal.logging.events.OutputEventQueueDrainedEvent
 import org.gradle.util.MockExecutor
 import org.gradle.util.MockTimeProvider
 import spock.lang.Subject
 
-class ConsoleBackedProgressRendererTest extends OutputSpecification {
+class ThrottlingOutputEventListenerTest extends OutputSpecification {
     def listener = Mock(OutputEventListener)
     def console = Mock(Console)
     def statusBar = Mock(Label)
     def timeProvider = new MockTimeProvider()
     def executor = new MockExecutor()
 
-    @Subject renderer = new ConsoleBackedProgressRenderer(listener, console, 100, executor, timeProvider)
+    @Subject renderer = new ThrottlingOutputEventListener(listener, console, 100, executor, timeProvider)
 
     def setup() {
         (0..1) * console.getStatusBar() >> statusBar
@@ -44,7 +44,7 @@ class ConsoleBackedProgressRendererTest extends OutputSpecification {
 
         then:
         1 * listener.onOutput(event)
-        1 * listener.onOutput(_ as RenderNowEvent)
+        1 * listener.onOutput(_ as OutputEventQueueDrainedEvent)
         1 * console.flush()
         0 * _
     }
@@ -62,7 +62,7 @@ class ConsoleBackedProgressRendererTest extends OutputSpecification {
 
         then:
         1 * listener.onOutput(event1)
-        1 * listener.onOutput(_ as RenderNowEvent)
+        1 * listener.onOutput(_ as OutputEventQueueDrainedEvent)
         1 * console.flush()
         0 * _
 
@@ -72,7 +72,7 @@ class ConsoleBackedProgressRendererTest extends OutputSpecification {
         then:
         1 * listener.onOutput(event2)
         1 * listener.onOutput(event3)
-        1 * listener.onOutput(_ as RenderNowEvent)
+        1 * listener.onOutput(_ as OutputEventQueueDrainedEvent)
         1 * console.flush()
         0 * _
 
@@ -97,7 +97,7 @@ class ConsoleBackedProgressRendererTest extends OutputSpecification {
 
         then:
         1 * listener.onOutput(event2)
-        1 * listener.onOutput(_ as RenderNowEvent)
+        1 * listener.onOutput(_ as OutputEventQueueDrainedEvent)
         1 * console.flush()
         0 * _
 
@@ -121,7 +121,7 @@ class ConsoleBackedProgressRendererTest extends OutputSpecification {
 
         then:
         1 * listener.onOutput(event1)
-        1 * listener.onOutput(_ as RenderNowEvent)
+        1 * listener.onOutput(_ as OutputEventQueueDrainedEvent)
         1 * console.flush()
         0 * _
 
@@ -132,7 +132,7 @@ class ConsoleBackedProgressRendererTest extends OutputSpecification {
         1 * listener.onOutput(event2)
         1 * listener.onOutput(event3)
         1 * listener.onOutput(end)
-        1 * listener.onOutput(_ as RenderNowEvent)
+        1 * listener.onOutput(_ as OutputEventQueueDrainedEvent)
         1 * console.flush()
         0 * _
     }
