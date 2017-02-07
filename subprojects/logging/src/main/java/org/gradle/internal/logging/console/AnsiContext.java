@@ -27,4 +27,5 @@ public interface AnsiContext {
     AnsiContext a(CharSequence value);
     AnsiContext newline();
     AnsiContext eraseForward();
+    AnsiContext eraseAll();
 }

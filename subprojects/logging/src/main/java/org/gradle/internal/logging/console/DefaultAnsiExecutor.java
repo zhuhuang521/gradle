@@ -175,5 +175,11 @@ public class DefaultAnsiExecutor implements AnsiExecutor {
             delegate.eraseLine(Ansi.Erase.FORWARD);
             return this;
         }
+
+        @Override
+        public AnsiContext eraseAll() {
+            delegate.eraseLine(Ansi.Erase.ALL);
+            return this;
+        }
     }
 }
