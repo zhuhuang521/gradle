@@ -147,6 +147,10 @@ public class DefaultAnsiExecutor implements AnsiExecutor {
 
         @Override
         public AnsiContext withStyle(Style style, Action<? super AnsiContext> action) {
+            if (Style.NORMAL.equals(style)) {
+                action.execute(this);
+                return this;
+            }
             return withColor(colorMap.getColourFor(style), action);
         }
 
@@ -157,8 +161,10 @@ public class DefaultAnsiExecutor implements AnsiExecutor {
 
         @Override
         public AnsiContext a(CharSequence value) {
-            delegate.a(value);
-            charactersWritten(writePos, value.length());
+            if (value.length() > 0) {
+                delegate.a(value);
+                charactersWritten(writePos, value.length());
+            }
             return this;
         }
 
