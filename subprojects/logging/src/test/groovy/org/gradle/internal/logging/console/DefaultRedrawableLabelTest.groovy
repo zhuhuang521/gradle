@@ -29,12 +29,12 @@ class DefaultRedrawableLabelTest extends Specification{
             return ansi
         }
     }
-    def writeCursor = new Cursor()
+    def writeCursor = Cursor.at(42, 0);
     def target = Stub(Appendable)
     def colorMap = new DefaultColorMap()
     def listener = Mock(DefaultAnsiExecutor.NewLineListener)
     def ansiExecutor = new DefaultAnsiExecutor(target, colorMap, factory, writeCursor, listener);
-    def label = new DefaultRedrawableLabel(ansiExecutor, new Cursor())
+    def label = new DefaultRedrawableLabel(ansiExecutor, Cursor.from(writeCursor))
 
 
     def "setting plain text to the label will only write the text to ansi"() {
@@ -223,6 +223,45 @@ class DefaultRedrawableLabelTest extends Specification{
 
         then:
         1 * ansi.a('text')
+        0 * ansi._
+    }
+
+    def "clears the line on second redraw when visible is set to false after initial redraw"() {
+        given:
+        label.text = "text"
+
+        when:
+        label.redraw()
+        label.setVisible(false)
+        label.redraw()
+
+        then:
+        1 * ansi.a('text')
+        1 * ansi.eraseLine(Ansi.Erase.ALL);
+        0 * ansi._
+    }
+
+    def "won't redraw when label is out of console bound"() {
+        given:
+        def label = new DefaultRedrawableLabel(ansiExecutor, Cursor.at(-2, 0))
+        label.text = "text"
+
+        when:
+        label.redraw()
+
+        then:
+        0 * ansi._
+    }
+
+    def "writes nothing when visibility is set to false before first redraw"() {
+        given:
+        label.text = "text"
+
+        when:
+        label.setVisible(false)
+        label.redraw()
+
+        then:
         0 * ansi._
     }
 }
