@@ -78,6 +78,7 @@ public class DefaultRedrawableLabel implements RedrawableLabel {
                 return;
             }
 
+            writePos.col = 0;
             ansiExecutor.writeAt(writePos, new Action<AnsiContext>() {
                 @Override
                 public void execute(AnsiContext ansi) {

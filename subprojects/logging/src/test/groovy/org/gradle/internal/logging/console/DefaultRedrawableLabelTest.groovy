@@ -237,6 +237,7 @@ class DefaultRedrawableLabelTest extends Specification{
 
         then:
         1 * ansi.a('text')
+        1 * ansi.cursorLeft(4)
         1 * ansi.eraseLine(Ansi.Erase.ALL);
         0 * ansi._
     }
