@@ -71,7 +71,7 @@ public class DefaultStatusArea implements BuildProgressArea {
     }
 
     public int getHeight() {
-        return STATUS_AREA_HEIGHT;
+        return entries.size();
     }
 
     @Override
