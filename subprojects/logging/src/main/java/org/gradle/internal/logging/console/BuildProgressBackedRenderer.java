@@ -71,7 +71,7 @@ public class BuildProgressBackedRenderer implements OutputEventListener {
             ProgressEvent progressEvent = (ProgressEvent) event;
             operations.progress(progressEvent.getStatus(), progressEvent.getOperationId());
         } else if (event instanceof EndOutputEvent) {
-            progressArea.close();
+            progressArea.setVisible(false);
         } else if (event instanceof RenderNowEvent) {
             renderNow();
         }

@@ -31,7 +31,7 @@ public class DefaultStatusArea implements BuildProgressArea {
     private final List<StyledLabel> buildProgressLabels = new ArrayList<StyledLabel>(BUILD_PROGRESS_LABEL_COUNT);
     private final Cursor statusAreaPos = new Cursor();
     private final AnsiExecutor ansiExecutor;
-    private boolean isClosed;
+    private boolean isVisible = true;
 
     public DefaultStatusArea(AnsiExecutor ansiExecutor) {
         this.ansiExecutor = ansiExecutor;
@@ -75,8 +75,11 @@ public class DefaultStatusArea implements BuildProgressArea {
     }
 
     @Override
-    public void close() {
-        isClosed = true;
+    public void setVisible(boolean isVisible) {
+        this.isVisible = isVisible;
+        for (DefaultRedrawableLabel label : entries) {
+            label.setVisible(isVisible);
+        }
     }
 
     public boolean isOverlappingWith(Cursor cursor) {
@@ -96,21 +99,11 @@ public class DefaultStatusArea implements BuildProgressArea {
     }
 
     public void redraw() {
-        if (isClosed) {
-            // Clear progress area
-            for (RedrawableLabel label : entries) {
-                label.setText(Collections.EMPTY_LIST);
-                label.redraw();
+        if (isVisible) {
+            int newLines = 0 - statusAreaPos.row + getHeight() - 1;
+            if (newLines > 0) {
+                ansiExecutor.writeAt(Cursor.newBottomLeft(), newLines(newLines));
             }
-
-            // Reset position
-            ansiExecutor.positionCursorAt(statusAreaPos);
-            return;
-        }
-
-        int newLines = 0 - entries.get(STATUS_AREA_HEIGHT - 1).getWritePosition().row;
-        if (newLines > 0) {
-            ansiExecutor.writeAt(Cursor.newBottomLeft(), newLines(newLines));
         }
 
         // Redraw every entries of this area
@@ -140,7 +133,11 @@ public class DefaultStatusArea implements BuildProgressArea {
     }
 
     private void parkCursor() {
-        ansiExecutor.positionCursorAt(Cursor.newBottomLeft());
+        if (isVisible) {
+            ansiExecutor.positionCursorAt(Cursor.newBottomLeft());
+        } else {
+            ansiExecutor.positionCursorAt(statusAreaPos);
+        }
     }
 
     private static Action<AnsiContext> newLines(final int numberOfNewLines) {

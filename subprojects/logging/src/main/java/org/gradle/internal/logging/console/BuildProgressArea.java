@@ -22,6 +22,6 @@ public interface BuildProgressArea {
     // TODO(ew): Consider whether this belongs in Console or here
     StyledLabel getProgressBar();
     List<StyledLabel> getBuildProgressLabels();
-    void close();
+    void setVisible(boolean isVisible);
     // TODO(ew): Consider void open();
 }

@@ -72,7 +72,7 @@ public class ConsoleStub implements Console {
             }
 
             @Override
-            public void close() {
+            public void setVisible(boolean isVisible) {
 
             }
         };

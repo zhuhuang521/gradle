@@ -30,6 +30,8 @@ public class DefaultRedrawableLabel implements RedrawableLabel {
     private List<Span> writtenSpans = Collections.EMPTY_LIST;
     private int absolutePositionRow = 0;  // Absolute coordination system
     private int previousWriteRow = absolutePositionRow;
+    private boolean isVisible = true;
+    private boolean previousVisibility = isVisible;
 
     DefaultRedrawableLabel(AnsiExecutor ansiExecutor, Cursor writePos) {
         this.ansiExecutor = ansiExecutor;
@@ -56,35 +58,62 @@ public class DefaultRedrawableLabel implements RedrawableLabel {
         return writePos;
     }
 
+    public void setVisible(boolean isVisible) {
+        this.isVisible = isVisible;
+    }
+
     @Override
     public void redraw() {
-        if (previousWriteRow == absolutePositionRow && writtenSpans.equals(spans)) {
-            // Does not need to be redrawn
+        if (writePos.row < 0) {
+            // Does not need to be redrawn if component is out of bound
             return;
         }
 
-        final int writtenTextLength = writePos.col;
-
-        writePos.col = 0;
-        ansiExecutor.writeAt(writePos, new Action<AnsiContext>() {
-            @Override
-            public void execute(AnsiContext ansi) {
-                int textLength = 0;
-                for (Span span : spans) {
-                    ansi.withStyle(span.getStyle(), writeText(span.getText()));
-
-                    textLength += span.getText().length();
-                }
-
-                if (previousWriteRow != absolutePositionRow
-                    || (previousWriteRow == absolutePositionRow && textLength < writtenTextLength)) {
-                    ansi.eraseForward();
-                }
+        if (!isVisible && previousVisibility) {
+            if (previousWriteRow == absolutePositionRow && writtenSpans.equals(Collections.EMPTY_LIST)) {
+                // Does not need to be redrawn
+                return;
             }
-        });
 
-        writtenSpans = spans;
-        previousWriteRow = absolutePositionRow;
+            ansiExecutor.writeAt(writePos, new Action<AnsiContext>() {
+                @Override
+                public void execute(AnsiContext ansi) {
+                    ansi.eraseAll();
+                }
+            });
+
+            writtenSpans = Collections.EMPTY_LIST;
+        }
+
+        if (isVisible) {
+            if (previousWriteRow == absolutePositionRow && writtenSpans.equals(spans)) {
+                // Does not need to be redrawn
+                return;
+            }
+
+            final int writtenTextLength = writePos.col;
+
+            writePos.col = 0;
+            ansiExecutor.writeAt(writePos, new Action<AnsiContext>() {
+                @Override
+                public void execute(AnsiContext ansi) {
+                    int textLength = 0;
+                    for (Span span : spans) {
+                        ansi.withStyle(span.getStyle(), writeText(span.getText()));
+
+                        textLength += span.getText().length();
+                    }
+
+                    if (previousWriteRow != absolutePositionRow
+                        || (previousWriteRow == absolutePositionRow && textLength < writtenTextLength)) {
+                        ansi.eraseForward();
+                    }
+                }
+            });
+
+            writtenSpans = spans;
+            previousWriteRow = absolutePositionRow;
+        }
     }
 
     private static Action<AnsiContext> writeText(final String text) {
