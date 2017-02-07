@@ -108,10 +108,10 @@ public class DefaultRedrawableLabel implements RedrawableLabel {
                         textLength += span.getText().length();
                     }
 
-                    if (previousWriteRow != absolutePositionRow
-                        || (previousWriteRow == absolutePositionRow && textLength < writtenTextLength)) {
+                    if (previousWriteRow == absolutePositionRow && textLength < writtenTextLength) {
                         ansi.eraseForward();
                     }
+                    // Note: We can't conclude anything if the label scrolled so we leave the erasing to the parent widget.
                 }
             });
 

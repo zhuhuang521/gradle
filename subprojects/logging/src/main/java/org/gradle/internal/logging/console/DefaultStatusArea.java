@@ -99,16 +99,30 @@ public class DefaultStatusArea implements BuildProgressArea {
     }
 
     public void redraw() {
-        if (isVisible) {
-            int newLines = 0 - statusAreaPos.row + getHeight() - 1;
-            if (newLines > 0) {
-                ansiExecutor.writeAt(Cursor.newBottomLeft(), newLines(newLines));
-            }
+        int newLines = 0 - statusAreaPos.row + getHeight() - 1;
+        if (isVisible && newLines > 0) {
+            ansiExecutor.writeAt(Cursor.newBottomLeft(), newLines(newLines));
         }
 
         // Redraw every entries of this area
-        for (RedrawableLabel label : entries) {
+        for (int i = 0; i < entries.size(); ++i) {
+            DefaultRedrawableLabel label = entries.get(i);
+
             label.redraw();
+
+            // Ensure a clean end of the line when the area scrolls
+            if (isVisible && newLines > 0 && (i + newLines) < entries.size()) {
+                int currentLength = label.getWritePosition().col;
+                int previousLength = entries.get(i + newLines).getWritePosition().col;
+                if (currentLength < previousLength) {
+                    ansiExecutor.writeAt(label.getWritePosition(), new Action<AnsiContext>() {
+                        @Override
+                        public void execute(AnsiContext ansi) {
+                            ansi.eraseForward();
+                        }
+                    });
+                }
+            }
         }
 
         parkCursor();
