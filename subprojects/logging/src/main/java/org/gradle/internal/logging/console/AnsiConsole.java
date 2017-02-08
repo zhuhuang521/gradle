@@ -16,7 +16,6 @@
 
 package org.gradle.internal.logging.console;
 
-import org.gradle.api.Action;
 import org.gradle.api.UncheckedIOException;
 
 import java.io.Flushable;

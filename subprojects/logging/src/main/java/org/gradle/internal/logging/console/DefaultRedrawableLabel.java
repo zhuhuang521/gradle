@@ -24,11 +24,11 @@ import java.util.Collections;
 import java.util.List;
 
 public class DefaultRedrawableLabel implements RedrawableLabel {
-    private final Cursor writePos;  // Relative coordination system
+    private final Cursor writePos;  // Relative coordinate system
     private final AnsiExecutor ansiExecutor;
     private List<Span> spans = Collections.EMPTY_LIST;
     private List<Span> writtenSpans = Collections.EMPTY_LIST;
-    private int absolutePositionRow = 0;  // Absolute coordination system
+    private int absolutePositionRow;  // = 0; Absolute coordinate system
     private int previousWriteRow = absolutePositionRow;
     private boolean isVisible = true;
     private boolean previousVisibility = isVisible;
