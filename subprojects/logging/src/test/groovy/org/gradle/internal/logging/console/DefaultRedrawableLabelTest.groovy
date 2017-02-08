@@ -36,7 +36,6 @@ class DefaultRedrawableLabelTest extends Specification{
     def ansiExecutor = new DefaultAnsiExecutor(target, colorMap, factory, writeCursor, listener);
     def label = new DefaultRedrawableLabel(ansiExecutor, Cursor.from(writeCursor))
 
-
     def "setting plain text to the label will only write the text to ansi"() {
         given:
         label.text = "text"
@@ -191,7 +190,6 @@ class DefaultRedrawableLabelTest extends Specification{
         } else {
             1 * ansi.cursorDown(rows)
         }
-        1 * ansi.eraseLine(Ansi.Erase.FORWARD)
         0 * ansi._
 
         where:
