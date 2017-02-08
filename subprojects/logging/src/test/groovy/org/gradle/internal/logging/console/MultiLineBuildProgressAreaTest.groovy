@@ -42,6 +42,7 @@ class MultiLineBuildProgressAreaTest extends Specification {
 
     def "scrolls the console with new lines when redrawing an empty work in progress area"() {
         when:
+        progressArea.setVisible(true)
         progressArea.redraw()
 
         then:

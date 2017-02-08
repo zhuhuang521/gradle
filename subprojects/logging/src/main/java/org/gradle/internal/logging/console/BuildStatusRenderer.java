@@ -30,12 +30,10 @@ import org.gradle.internal.nativeintegration.console.ConsoleMetaData;
 import java.util.Arrays;
 
 public class BuildStatusRenderer implements OutputEventListener {
-    // TODO(ew): Use ProgressBar for formatting
-    private static final String INITIAL_STATUS_TEXT = "<-------------> 0% INITIALIZING";
     private final OutputEventListener listener;
     private final StyledLabel buildStatusLabel;
     private final ConsoleMetaData consoleMetaData;
-    private String currentBuildStatus = INITIAL_STATUS_TEXT;
+    private String currentBuildStatus = null;
     private OperationIdentifier rootOperationId;
 
     public BuildStatusRenderer(OutputEventListener listener, StyledLabel buildStatusLabel, ConsoleMetaData consoleMetaData) {

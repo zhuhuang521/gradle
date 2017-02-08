@@ -60,6 +60,7 @@ public class WorkInProgressRenderer implements OutputEventListener {
     @Override
     public void onOutput(OutputEvent event) {
         if (event instanceof ProgressStartEvent) {
+            progressArea.setVisible(true);
             ProgressStartEvent startEvent = (ProgressStartEvent) event;
             ProgressOperation op = operations.start(startEvent.getShortDescription(), startEvent.getStatus(), startEvent.getCategory(), startEvent.getOperationId(), startEvent.getParentId());
             attach(op);

@@ -31,7 +31,7 @@ public class MultiLineBuildProgressArea implements BuildProgressArea {
     private final List<StyledLabel> buildProgressLabels = new ArrayList<StyledLabel>(BUILD_PROGRESS_LABEL_COUNT);
     private final Cursor statusAreaPos = new Cursor();
     private final AnsiExecutor ansiExecutor;
-    private boolean isVisible = true;
+    private boolean isVisible = false;
 
     public MultiLineBuildProgressArea(AnsiExecutor ansiExecutor) {
         this.ansiExecutor = ansiExecutor;
