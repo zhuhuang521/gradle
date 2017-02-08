@@ -88,7 +88,7 @@ public class AnsiConsole implements Console {
 
     private class Listener implements DefaultAnsiExecutor.NewLineListener {
         @Override
-        public void beforeNewLineWritten(Cursor writeCursor) {
+        public void beforeNewLineWritten(AnsiContext ansi, Cursor writeCursor) {
             if (writeCursor.row == 0) {
                 buildOutputArea.newLineAdjustment();
                 buildStatusArea.newLineAdjustment();

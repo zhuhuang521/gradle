@@ -116,12 +116,12 @@ public class DefaultAnsiExecutor implements AnsiExecutor {
     }
 
     interface NewLineListener {
-        void beforeNewLineWritten(Cursor writeCursor);
+        void beforeNewLineWritten(AnsiContext ansi, Cursor writeCursor);
     }
 
     private static class NoOpListener implements NewLineListener {
         @Override
-        public void beforeNewLineWritten(Cursor writeCursor) {
+        public void beforeNewLineWritten(AnsiContext ansi, Cursor writeCursor) {
 
         }
     }
@@ -170,7 +170,7 @@ public class DefaultAnsiExecutor implements AnsiExecutor {
 
         @Override
         public AnsiContext newline() {
-            listener.beforeNewLineWritten(writeCursor);
+            listener.beforeNewLineWritten(this, writeCursor);
             delegate.newline();
             newLineWritten(writePos);
             return this;
