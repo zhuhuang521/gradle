@@ -91,18 +91,13 @@ public class AnsiConsole implements Console {
     private class Listener implements DefaultAnsiExecutor.NewLineListener {
         @Override
         public void beforeNewLineWritten(AnsiContext ansi, Cursor writeCursor) {
+            if (buildStatusArea.isOverlappingWith(writeCursor)) {
+                ansi.eraseForward();
+            }
+
             if (writeCursor.row == 0) {
                 buildOutputArea.newLineAdjustment();
                 buildStatusArea.newLineAdjustment();
-            }
-
-            if (buildStatusArea.isOverlappingWith(writeCursor)) {
-                ansiExecutor.writeAt(writeCursor, new Action<AnsiContext>() {
-                    @Override
-                    public void execute(AnsiContext ansi) {
-                        ansi.eraseForward();
-                    }
-                });
             }
         }
     }
