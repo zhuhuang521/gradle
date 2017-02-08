@@ -16,43 +16,53 @@
 
 package org.gradle.internal.logging.console
 
+import org.gradle.internal.logging.events.OperationIdentifier
 import org.gradle.internal.nativeintegration.console.ConsoleMetaData
-import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Subject
 
-@Ignore
 class DefaultWorkInProgressFormatterTest extends Specification {
-
     def consoleMetaData = Mock(ConsoleMetaData)
     @Subject statusBarFormatter = new DefaultWorkInProgressFormatter(consoleMetaData)
 
     def "formats operations"() {
-        def op1 = new ProgressOperation("shortDescr1", "status1", null)
-        def op2 = new ProgressOperation(null, null, op1)
-        def op3 = new ProgressOperation("shortDescr2", "status2", op2)
+        given:
+        def op1 = new ProgressOperation("SHORT_DESCRIPTION_1", "STATUS_1", "CATEGORY", new OperationIdentifier(1), null)
+        def op2 = new ProgressOperation(null, null, null, new OperationIdentifier(2), op1)
+        def op3 = new ProgressOperation("SHORT_DESCRIPTION_2", "STATUS_2", "CATEGORY", new OperationIdentifier(3), op2)
 
         expect:
-        statusBarFormatter.format(op3) == "> status1 > status2"
-        statusBarFormatter.format(op2) == "> status1"
-        statusBarFormatter.format(op1) == "> status1"
+        statusBarFormatter.format(op3).first().text == "> STATUS_1 > STATUS_2"
+        statusBarFormatter.format(op2).first().text == "> STATUS_1"
+        statusBarFormatter.format(op1).first().text == "> STATUS_1"
     }
 
-    def "uses shortDescr if no status available"() {
+    def "uses shortDescription if no status available"() {
+        given:
+        def operation1 = new ProgressOperation("SHORT_DESCRIPTION_1", null, "CATEGORY", new OperationIdentifier(1), null)
+        def operation2 = new ProgressOperation("SHORT_DESCRIPTION_2", '', "CATEGORY", new OperationIdentifier(2), null)
+
         expect:
-        statusBarFormatter.format(new ProgressOperation("shortDescr1", null, null)) == "> shortDescr1"
-        statusBarFormatter.format(new ProgressOperation("shortDescr2", '', null)) == "> shortDescr2"
+        statusBarFormatter.format(operation1).first().text == "> SHORT_DESCRIPTION_1"
+        statusBarFormatter.format(operation2).first().text == "> SHORT_DESCRIPTION_2"
     }
 
     def "trims output to one less than the max console width"() {
+        given:
+        def operation = new ProgressOperation("SHORT_DESCRIPTION_1", "these are more than 10 characters", "CATEGORY", new OperationIdentifier(1), null)
+
         when:
         _ * consoleMetaData.getCols() >> 10
+
         then:
-        statusBarFormatter.format(new ProgressOperation("shortDescr1", "these are more than 10 characters", null)) == "> these a"
+        statusBarFormatter.format(operation).first().text == "> these a"
     }
 
-    def "empty message is supported"() {
+    def "placeholder is used when message is empty"() {
+        given:
+        def operation = new ProgressOperation(null, null, null, new OperationIdentifier(1), null)
+
         expect:
-        statusBarFormatter.format(new ProgressOperation(null, null, null)) == ""
+        statusBarFormatter.format(operation).first().text == "> IDLE"
     }
 }
