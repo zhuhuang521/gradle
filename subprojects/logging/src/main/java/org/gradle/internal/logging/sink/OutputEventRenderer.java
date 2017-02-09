@@ -23,6 +23,7 @@ import org.gradle.api.logging.configuration.ConsoleOutput;
 import org.gradle.internal.event.ListenerBroadcast;
 import org.gradle.internal.logging.config.LoggingRouter;
 import org.gradle.internal.logging.console.AnsiConsole;
+import org.gradle.internal.logging.console.ConsoleLayoutCalculator;
 import org.gradle.internal.logging.console.ThrottlingOutputEventListener;
 import org.gradle.internal.logging.console.WorkInProgressRenderer;
 import org.gradle.internal.logging.console.BuildStatusRenderer;
@@ -120,9 +121,11 @@ public class OutputEventRenderer implements OutputEventListener, LoggingRouter {
 
     public void attachAnsiConsole(OutputStream outputStream) {
         synchronized (lock) {
+            ConsoleMetaData consoleMetaData = new FallbackConsoleMetaData();
             OutputStreamWriter writer = new OutputStreamWriter(outputStream);
-            Console console = new AnsiConsole(writer, writer, colourMap, true);
-            addConsole(console, true, true, new FallbackConsoleMetaData());
+            int numWorkersToDisplay = ConsoleLayoutCalculator.calculateNumWorkersForConsoleDisplay(consoleMetaData);
+            Console console = new AnsiConsole(writer, writer, colourMap, numWorkersToDisplay, true);
+            addConsole(console, true, true, consoleMetaData);
         }
     }
 

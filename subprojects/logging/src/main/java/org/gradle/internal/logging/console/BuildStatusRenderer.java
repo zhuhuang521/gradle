@@ -33,7 +33,7 @@ public class BuildStatusRenderer implements OutputEventListener {
     private final OutputEventListener listener;
     private final StyledLabel buildStatusLabel;
     private final ConsoleMetaData consoleMetaData;
-    private String currentBuildStatus = null;
+    private String currentBuildStatus;
     private OperationIdentifier rootOperationId;
 
     public BuildStatusRenderer(OutputEventListener listener, StyledLabel buildStatusLabel, ConsoleMetaData consoleMetaData) {

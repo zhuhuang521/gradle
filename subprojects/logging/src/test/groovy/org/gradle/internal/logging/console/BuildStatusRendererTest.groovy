@@ -20,6 +20,7 @@ import org.gradle.internal.logging.OutputSpecification
 import org.gradle.internal.logging.events.OutputEventListener
 import org.gradle.internal.logging.events.OutputEventQueueDrainedEvent
 import org.gradle.internal.logging.text.Span
+import org.gradle.internal.logging.text.Style
 import org.gradle.internal.nativeintegration.console.ConsoleMetaData
 import spock.lang.Ignore
 import spock.lang.Subject
@@ -41,7 +42,7 @@ class BuildStatusRendererTest extends OutputSpecification {
         then:
         1 * consoleMetaData.getCols() >> 80
         // FIXME: As StyledLabel is designed, it's nearly impossible to assert the content here
-        1 * statusLabel.setText(_ as Span)
+        1 * statusLabel.setText(new ArrayList<Span>(new Span(Style.NORMAL, 'status')))
         0 * statusLabel._
 
         when:

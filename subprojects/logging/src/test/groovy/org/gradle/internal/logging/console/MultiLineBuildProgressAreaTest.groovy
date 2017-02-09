@@ -32,7 +32,7 @@ class MultiLineBuildProgressAreaTest extends Specification {
     def colorMap = new TestColorMap()
     def newLineListener = Mock(DefaultAnsiExecutor.NewLineListener)
     def ansiExecutor = new DefaultAnsiExecutor(target, colorMap, factory, writeCursor, newLineListener)
-    def progressArea = new MultiLineBuildProgressArea(ansiExecutor)
+    def progressArea = new MultiLineBuildProgressArea(ansiExecutor, 4)
 
     def setup() {
         newLineListener.beforeNewLineWritten(_) >> {

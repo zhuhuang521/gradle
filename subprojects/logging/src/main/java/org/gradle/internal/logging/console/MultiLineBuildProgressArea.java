@@ -16,6 +16,7 @@
 
 package org.gradle.internal.logging.console;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.gradle.api.Action;
 
 import java.util.ArrayList;
@@ -23,18 +24,21 @@ import java.util.Collections;
 import java.util.List;
 
 public class MultiLineBuildProgressArea implements BuildProgressArea {
-    private static final int BUILD_PROGRESS_LABEL_COUNT = 4;
-    private static final int STATUS_AREA_HEIGHT = 2 + BUILD_PROGRESS_LABEL_COUNT;
-    private final List<DefaultRedrawableLabel> entries = new ArrayList<DefaultRedrawableLabel>(STATUS_AREA_HEIGHT);
+    private static final int MAXIMUM_NUM_LABELS = 8;
+    private final List<DefaultRedrawableLabel> entries;
     private final DefaultRedrawableLabel progressBarLabel;
 
-    private final List<StyledLabel> buildProgressLabels = new ArrayList<StyledLabel>(BUILD_PROGRESS_LABEL_COUNT);
+    private final List<StyledLabel> buildProgressLabels;
     private final Cursor statusAreaPos = new Cursor();
     private final AnsiExecutor ansiExecutor;
-    private boolean isVisible = false;
+    private boolean isVisible;
 
-    public MultiLineBuildProgressArea(AnsiExecutor ansiExecutor) {
+    public MultiLineBuildProgressArea(AnsiExecutor ansiExecutor, int preferredNumLabels) {
         this.ansiExecutor = ansiExecutor;
+        final int numWorkInProgressLabels = calculateNumWorkInProgressLabels(preferredNumLabels);
+        final int progressAreaHeight = calculateTotalHeight(numWorkInProgressLabels);
+        this.buildProgressLabels = new ArrayList<StyledLabel>(numWorkInProgressLabels);
+        this.entries = new ArrayList<DefaultRedrawableLabel>(progressAreaHeight);
 
         // TODO(ew): Way too much work being done in constructor, making this impossible to test
         int row = 0;
@@ -42,7 +46,7 @@ public class MultiLineBuildProgressArea implements BuildProgressArea {
         progressBarLabel = newLabel(row--);
         entries.add(progressBarLabel);
 
-        for (int i = 0; i < BUILD_PROGRESS_LABEL_COUNT; ++i) {
+        for (int i = 0; i < numWorkInProgressLabels; ++i) {
             DefaultRedrawableLabel label = newLabel(row--);
             entries.add(label);
             buildProgressLabels.add(label);
@@ -50,6 +54,17 @@ public class MultiLineBuildProgressArea implements BuildProgressArea {
 
         // Parking space for the write cursor
         entries.add(newLabel(row--));
+    }
+
+    @VisibleForTesting
+    public int calculateNumWorkInProgressLabels(int preferredNumLabels) {
+        return Math.min(preferredNumLabels, MAXIMUM_NUM_LABELS);
+    }
+
+    @VisibleForTesting
+    public int calculateTotalHeight(int numWorkInProgressLabels) {
+        // 2 extra lines: 1 for BuildStatus and 1 for Cursor parking space
+        return numWorkInProgressLabels + 2;
     }
 
     private DefaultRedrawableLabel newLabel(int row) {

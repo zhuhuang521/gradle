@@ -30,7 +30,7 @@ class AnsiConsoleTest extends Specification {
     def target = Stub(Appendable)
     def flushable = Stub(Flushable)
     def colorMap = new TestColorMap()
-    def console = new AnsiConsole(target, flushable, colorMap) {
+    def console = new AnsiConsole(target, flushable, colorMap, 4, false) {
         def Ansi createAnsi() {
             return ansi
         }
