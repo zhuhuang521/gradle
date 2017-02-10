@@ -120,6 +120,7 @@ public class SystemApplicationClassLoaderWorker implements Callable<Void> {
                 connection.stop();
             }
         } finally {
+            loggingManager.stop();
             messagingServices.close();
         }
 
