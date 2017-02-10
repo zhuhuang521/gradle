@@ -23,7 +23,7 @@ class RealLifeAndroidBuildPerformanceTest extends AbstractAndroidPerformanceTest
     @Unroll("Builds '#testProject' calling #tasks")
     def "build"() {
         given:
-        runner.testId = "Android $testProject ${tasks.join(' ')}" + (parallel ? " (parallel)" : "")
+        runner.testId = "Android $testProject ${tasks.join(' ').replace(':', '_')}" + (parallel ? " (parallel)" : "")
         runner.testProject = testProject
         runner.tasksToRun = tasks
         runner.gradleOpts = ["-Xms$memory", "-Xmx$memory"]
