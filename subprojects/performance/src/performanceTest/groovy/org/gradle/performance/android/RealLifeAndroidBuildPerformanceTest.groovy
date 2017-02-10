@@ -27,6 +27,7 @@ class RealLifeAndroidBuildPerformanceTest extends AbstractAndroidPerformanceTest
         runner.testProject = testProject
         runner.tasksToRun = tasks
         runner.gradleOpts = testProject.startsWith('medium') ? ["-Xms2g", "-Xmx2g"] : ["-Xms8g", "-Xmx12g"]
+        runner.minimumVersion = "3.4"
 
         when:
         def result = runner.run()

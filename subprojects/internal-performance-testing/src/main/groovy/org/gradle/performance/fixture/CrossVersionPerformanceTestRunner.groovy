@@ -59,6 +59,7 @@ public class CrossVersionPerformanceTestRunner extends PerformanceTestSpec {
     List<String> previousTestIds = []
 
     List<String> targetVersions = []
+    String minimumVersion
 
     BuildExperimentListener buildExperimentListener
     InvocationCustomizer invocationCustomizer
@@ -104,7 +105,7 @@ public class CrossVersionPerformanceTestRunner extends PerformanceTestSpec {
 
         runVersion(current, perVersionWorkingDirectory('current'), results.current)
 
-        def baselineVersions = toBaselineVersions(releases, targetVersions)
+        def baselineVersions = toBaselineVersions(releases, targetVersions, minimumVersion)
 
         baselineVersions.each { it ->
             def baselineVersion = results.baseline(it)
@@ -133,7 +134,7 @@ public class CrossVersionPerformanceTestRunner extends PerformanceTestSpec {
         perVersion
     }
 
-    static Iterable<String> toBaselineVersions(ReleasedVersionDistributions releases, List<String> targetVersions) {
+    static Iterable<String> toBaselineVersions(ReleasedVersionDistributions releases, List<String> targetVersions, String minimumVersion) {
         Iterable<String> versions
         boolean addMostRecentFinalRelease = true
         def overrideBaselinesProperty = System.getProperty('org.gradle.performance.baselines')
@@ -151,6 +152,10 @@ public class CrossVersionPerformanceTestRunner extends PerformanceTestSpec {
         def currentBaseVersion = GradleVersion.current().getBaseVersion().version
 
         for (String version : versions) {
+            if (minimumVersion != null && GradleVersion.version(version) < GradleVersion.version(minimumVersion)) {
+                //this version is not supported by this scenario, as it uses features not yet available in this version of Gradle
+                continue
+            }
             if (version == currentBaseVersion) {
                 // current version is run by default, skip adding it to baseline
                 continue
