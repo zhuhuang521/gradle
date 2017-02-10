@@ -152,10 +152,6 @@ public class CrossVersionPerformanceTestRunner extends PerformanceTestSpec {
         def currentBaseVersion = GradleVersion.current().getBaseVersion().version
 
         for (String version : versions) {
-            if (minimumVersion != null && GradleVersion.version(version) < GradleVersion.version(minimumVersion)) {
-                //this version is not supported by this scenario, as it uses features not yet available in this version of Gradle
-                continue
-            }
             if (version == currentBaseVersion) {
                 // current version is run by default, skip adding it to baseline
                 continue
@@ -178,6 +174,10 @@ public class CrossVersionPerformanceTestRunner extends PerformanceTestSpec {
             }
             def releasedVersion = findRelease(releases, version)
             def versionObject = GradleVersion.version(version)
+            if (minimumVersion != null && versionObject < GradleVersion.version(minimumVersion)) {
+                //this version is not supported by this scenario, as it uses features not yet available in this version of Gradle
+                continue
+            }
             if (releasedVersion) {
                 baselineVersions.add(releasedVersion.version.version)
             } else if (versionObject.snapshot || isRcVersion(versionObject)) {
